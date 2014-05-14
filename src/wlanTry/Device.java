@@ -26,10 +26,15 @@ public class Device implements Runnable {
 	int state=1;
 	int time;
 	int contentionWindow;
+	int packetTx,packetRx,packetTxFails,packetRxFails;
 	public Device(int id,CyclicBarrier cb,Object o) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
+		this.packetRx=0;
+		this.packetTx=0;
+		this.packetTxFails=0;
+		this.packetRxFails=0;
     } 
 	@Override
 	public void run() {
@@ -69,7 +74,7 @@ public class Device implements Runnable {
 	private void receiveInit() {
 		state=2;
 		receiveState=0;
-		partner=channel[senseRange];
+		partner=senseRange;
 		count=0;
 	}
 	/**
@@ -77,7 +82,8 @@ public class Device implements Runnable {
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		return (channel[senseRange]!=0);
+		senseRange=id^1;
+		return (channel[senseRange]==id);
 	}
 	private void receiveNextStep() {
 		count--;
@@ -86,31 +92,35 @@ public class Device implements Runnable {
 			case 0:
 				if (channel[id]==0){
 					receiveState=2;
-					count=16;
+					count=10;
 				}
 				else if (channel[id]!=partner)
 					receiveState=1;
 				break;
 			case 1:
-				receiveComplete();
+				receiveComplete(false);
 				break;
-			case 2:
+			case 2://start sending ACK
 				receiveState=3;
 				count=40;
 				synchronized(this.key){
 					channel[id]=100;
 				}
-			case 3:
+			case 3://finished sending ACK
 				synchronized(this.key){
 					channel[id]=-1;
 				}
-				receiveComplete();
+				receiveComplete(true);
 			}
 		}
 		// TODO Auto-generated method stub
 		
 	}
-	private void receiveComplete() {
+	private void receiveComplete(boolean success) {
+		if (success)
+			this.packetRx++;
+		else
+			this.packetRxFails++;
 		receiveState=-1;
 		state=0;
 		
@@ -137,7 +147,11 @@ public class Device implements Runnable {
 		contentionWindow=16;
 		partner=id^1;
 	}
-	private void sendComplete(){
+	private void sendComplete(boolean success){
+		if (success)
+			this.packetTx++;
+		else
+			this.packetTxFails++;
 		sendState=-1;
 		state=0;
 	}
@@ -150,11 +164,16 @@ public class Device implements Runnable {
 		if (carrierSense){
 			switch (sendState){
 			case 0://DIFS
-				count=34;
+				count=28;
 				break;
 			case 2://Transmitting
 				count--;
 				break;
+			case 3:
+				if (channel[senseRange]==100){
+					count=0;
+					state=4;
+				}
 			}
 		}else{
 			switch (sendState){
@@ -177,10 +196,17 @@ public class Device implements Runnable {
 					count=1000;
 					channel[id]=partner;
 					break;
-				case 2://Transmitting
+				case 2://waiting ACK
 					System.out.println(this.time+": MT "+id+" has finished sending");
 					channel[id]=-1;
-					sendComplete();
+					sendState=3;
+					count=10;
+					break;
+				case 3://No ACK
+					sendComplete(false);
+					break;
+				case 4://receive ACK
+					sendComplete(true);
 					break;
 				}
 			}
