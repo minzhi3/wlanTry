@@ -1,5 +1,6 @@
 package wlanTry;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -22,12 +23,13 @@ public class Device implements Runnable {
 	int sendState;
 	int receiveState;
 	int partner;
-	int senseRange;
-	int state=1;
+	final ArrayList<Integer> senseRange;
+	
+	int state;
 	int time;
 	int contentionWindow;
 	int packetTx,packetRx,packetTxFails,packetRxFails;
-	public Device(int id,CyclicBarrier cb,Object o) {
+	public Device(int id,CyclicBarrier cb,Object o,ArrayList<Integer> range) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
@@ -35,17 +37,19 @@ public class Device implements Runnable {
 		this.packetTx=0;
 		this.packetTxFails=0;
 		this.packetRxFails=0;
+		this.senseRange=range;
+		this.state=0;
     } 
 	@Override
 	public void run() {
 		long begintime = System.nanoTime();
-		for (time=0;time<1000000;time++){
+		for (time=0;time<5000;time++){
 			if (state==0){
-				if (checkRequest()){
-					sendInit();
-				};
 				if (checkChannel()){
 					receiveInit();
+				}
+				if (checkRequest()){
+					sendInit();
 				}
 			}
 			if (state==1){
@@ -72,9 +76,10 @@ public class Device implements Runnable {
 	 * Initialize parameters for receiving. 
 	 */
 	private void receiveInit() {
+		System.out.println(this.time+": MT "+id+" receiving initialized");
 		state=2;
 		receiveState=0;
-		partner=senseRange;
+		partner=receiveSignal()[0];
 		count=0;
 	}
 	/**
@@ -82,45 +87,76 @@ public class Device implements Runnable {
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		senseRange=id^1;
-		return (channel[senseRange]==id);
+		return (receiveSignal()[1]==id);
+	}
+	/**
+	 * received signal from neighbor terminal
+	 * @return 
+	 * integer[2]=(id, value);
+	 */
+	private int[] receiveSignal(){
+		int id=-1;
+		int val=-1;
+		int ret[]=new int[2];
+		for (int i=0;i<senseRange.size();i++){
+			int k=senseRange.get(i);
+			int p=channel[k];
+			if (p!=-1){
+				if (val==-1){
+					val=p;
+					id=k;
+				}else{
+					id=0xFFFF;
+					val=0xFFFF;
+					break;
+				}
+			}
+		}
+		ret[0]=id; ret[1]=val;
+		return ret;
 	}
 	private void receiveNextStep() {
-		count--;
-		if (count<=0){
+		if (count>0){
+			count--;
+		}else{
 			switch (receiveState){
 			case 0:
-				if (channel[id]==0){
+				if (receiveSignal()[1]==-1){
 					receiveState=2;
 					count=10;
 				}
-				else if (channel[id]!=partner)
+				else if (receiveSignal()[1]!=id)
 					receiveState=1;
 				break;
 			case 1:
 				receiveComplete(false);
 				break;
 			case 2://start sending ACK
+				System.out.println(this.time+": MT "+id+" sending ACK");
 				receiveState=3;
 				count=40;
 				synchronized(this.key){
 					channel[id]=100;
 				}
+				break;
 			case 3://finished sending ACK
+				System.out.println(this.time+": MT "+id+" finished sending ACK");
 				synchronized(this.key){
 					channel[id]=-1;
 				}
 				receiveComplete(true);
 			}
 		}
-		// TODO Auto-generated method stub
-		
 	}
 	private void receiveComplete(boolean success) {
-		if (success)
+		if (success){
 			this.packetRx++;
-		else
+			System.out.println(this.time+": MT "+id+" receiving Complete");
+		}
+		else{
 			this.packetRxFails++;
+			System.out.println(this.time+": MT "+id+" receiving failed");
+		}
 		receiveState=-1;
 		state=0;
 		
@@ -141,6 +177,7 @@ public class Device implements Runnable {
 	 * Initialize parameters for sending. 
 	 */
 	private void sendInit(){
+		System.out.println(this.time+": MT "+id+" tranmission initialized");
 		state=1;
 		sendState=0;
 		count=34;
@@ -148,18 +185,32 @@ public class Device implements Runnable {
 		partner=id^1;
 	}
 	private void sendComplete(boolean success){
-		if (success)
+		if (success){
 			this.packetTx++;
-		else
+			System.out.println(this.time+": MT "+id+" tranmission successful");
+		}
+		else{
 			this.packetTxFails++;
-		sendState=-1;
+			System.out.println(this.time+": MT "+id+" tranmission failed");
+		}
+			sendState=-1;
 		state=0;
+	}
+	private void sendInterrupt(){
+		System.out.println(this.time+": MT "+id+" tranmission interruptted");
+		sendState=-1;
+		receiveInit();
 	}
 	private void sendNextStep(){
 		boolean carrierSense=false;
 		//for (int i=0;i<100;i++){
 			//if (i==this.id) continue;
-			if (channel[senseRange]!=-1) carrierSense=true; 
+		if (receiveSignal()[0]==id){
+			if (sendState==0 || sendState==1){
+				sendInterrupt();
+			}
+		}
+		if (receiveSignal()[0]!=-1) carrierSense=true; 
 		//}
 		if (carrierSense){
 			switch (sendState){
@@ -170,13 +221,25 @@ public class Device implements Runnable {
 				count--;
 				break;
 			case 3:
-				if (channel[senseRange]==100){
-					count=0;
-					state=4;
+				if (receiveSignal()[0]==100){
+					count=999;
+					sendState=4;
+					
 				}
+				break;
+			case 4:
+				if (receiveSignal()[0]!=100){
+					sendState=5;
+					count=0;
+				}
+				break;
 			}
 		}else{
 			switch (sendState){
+			case 4:
+				count=0;
+				
+				break;
 			default:
 				count--;
 				break;
@@ -189,24 +252,31 @@ public class Device implements Runnable {
 				case 0://DIFS
 					sendState=1;
 					count=new Random().nextInt(contentionWindow)*9+9;
+					System.out.println(this.time+": MT "+id+" backoff "+count);
 					break;
 				case 1://Back-off
 					sendState=2;
-					//System.out.println(this.time+": MT "+id+" is sending");
+					System.out.println(this.time+": MT "+id+" transmitting");
 					count=1000;
 					channel[id]=partner;
 					break;
 				case 2://waiting ACK
-					System.out.println(this.time+": MT "+id+" has finished sending");
+					System.out.println(this.time+": MT "+id+" waiting ACK");
 					channel[id]=-1;
 					sendState=3;
-					count=10;
+					count=90;//EIFS
 					break;
 				case 3://No ACK
+					System.out.println(this.time+": MT "+id+" No ACK");
 					sendComplete(false);
 					break;
 				case 4://receive ACK
+					System.out.println(this.time+": MT "+id+" get ACK");
 					sendComplete(true);
+					break;
+				case 5://No ACK
+					System.out.println(this.time+": MT "+id+" ACK failed");
+					sendComplete(false);
 					break;
 				}
 			}
