@@ -1,6 +1,5 @@
 package wlanTry;
 
-import java.util.concurrent.CyclicBarrier;
 
 public class Main {
 

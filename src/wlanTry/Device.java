@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
+
+class Pair{
+	public int id;
+	public int value;
+};
 /**
  * Class of device in WLAN
  * Sending:set value of channel[id] as partner
@@ -24,7 +29,7 @@ public class Device implements Runnable {
 	int receiveState;
 	int partner;
 	final ArrayList<Integer> senseRange;
-	
+	TransmissionRequest request;
 	int state;
 	int time;
 	int contentionWindow;
@@ -39,11 +44,12 @@ public class Device implements Runnable {
 		this.packetRxFails=0;
 		this.senseRange=range;
 		this.state=0;
+		this.request=new TransmissionRequest();
     } 
 	@Override
 	public void run() {
 		long begintime = System.nanoTime();
-		for (time=0;time<5000;time++){
+		for (time=0;time<100000;time++){
 			if (state==0){
 				if (checkChannel()){
 					receiveInit();
@@ -69,7 +75,7 @@ public class Device implements Runnable {
 		}
 		long endtime = System.nanoTime();
 		double costTime = (endtime - begintime)/1e9;
-		System.out.println(costTime);
+		System.out.println(costTime+": MT "+this.id+" Tx "+this.packetTx+", Rx "+this.packetRx);
 	}
 	// -----------------------RECEIVE------------------------
 	/**
@@ -79,7 +85,7 @@ public class Device implements Runnable {
 		System.out.println(this.time+": MT "+id+" receiving initialized");
 		state=2;
 		receiveState=0;
-		partner=receiveSignal()[0];
+		partner=receiveSignal().id;
 		count=0;
 	}
 	/**
@@ -87,17 +93,17 @@ public class Device implements Runnable {
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		return (receiveSignal()[1]==id);
+		return (receiveSignal().value==id);
 	}
 	/**
 	 * received signal from neighbor terminal
 	 * @return 
 	 * integer[2]=(id, value);
 	 */
-	private int[] receiveSignal(){
+	private Pair receiveSignal(){
+		Pair ret=new Pair();
 		int id=-1;
 		int val=-1;
-		int ret[]=new int[2];
 		for (int i=0;i<senseRange.size();i++){
 			int k=senseRange.get(i);
 			int p=channel[k];
@@ -112,20 +118,21 @@ public class Device implements Runnable {
 				}
 			}
 		}
-		ret[0]=id; ret[1]=val;
+		ret.id=id; ret.value=val;
 		return ret;
 	}
 	private void receiveNextStep() {
 		if (count>0){
 			count--;
 		}else{
+			int signal=receiveSignal().value;
 			switch (receiveState){
 			case 0:
-				if (receiveSignal()[1]==-1){
+				if (signal==-1){
 					receiveState=2;
 					count=10;
 				}
-				else if (receiveSignal()[1]!=id)
+				else if (signal!=id)
 					receiveState=1;
 				break;
 			case 1:
@@ -165,13 +172,16 @@ public class Device implements Runnable {
 	
 
 	// -----------------------SEND------------------------
+	public void buildRequestList(double pps, int a, int b, int count){
+		request.buildRequestList(pps, a, b, count);
+	}
 	/**
 	 * check whether there is packet transmitting in channel.
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkRequest() {
-		Random r=new Random();
-		return r.nextDouble()<0.01;
+		if (request.getTime()==null) return false;
+		return (this.time>request.getTime().time);
 	}
 	/**
 	 * Initialize parameters for sending. 
@@ -182,12 +192,13 @@ public class Device implements Runnable {
 		sendState=0;
 		count=34;
 		contentionWindow=16;
-		partner=id^1;
+		partner=request.getTime().id;
 	}
 	private void sendComplete(boolean success){
 		if (success){
 			this.packetTx++;
 			System.out.println(this.time+": MT "+id+" tranmission successful");
+			request.popFront();
 		}
 		else{
 			this.packetTxFails++;
@@ -203,14 +214,15 @@ public class Device implements Runnable {
 	}
 	private void sendNextStep(){
 		boolean carrierSense=false;
+		int signal=receiveSignal().value;
 		//for (int i=0;i<100;i++){
 			//if (i==this.id) continue;
-		if (receiveSignal()[0]==id){
+		if (signal==id){
 			if (sendState==0 || sendState==1){
 				sendInterrupt();
 			}
 		}
-		if (receiveSignal()[0]!=-1) carrierSense=true; 
+		if (signal!=-1) carrierSense=true; 
 		//}
 		if (carrierSense){
 			switch (sendState){
@@ -221,14 +233,14 @@ public class Device implements Runnable {
 				count--;
 				break;
 			case 3:
-				if (receiveSignal()[0]==100){
+				if (signal==100){
 					count=999;
 					sendState=4;
 					
 				}
 				break;
 			case 4:
-				if (receiveSignal()[0]!=100){
+				if (signal!=100){
 					sendState=5;
 					count=0;
 				}
