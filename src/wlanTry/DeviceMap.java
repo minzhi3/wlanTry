@@ -71,6 +71,21 @@ public class DeviceMap {
 			this.addDevice(x, y);
 		}
 	}
+	public void createMapSingle(int n){
+		Random r=new Random();
+		//for (int i=0;i<4;i++){
+			this.addDevice(0, 0);
+		//}
+		for (int i=0;i<n;i++){
+			double x;
+			double y;
+			do{
+				x=(r.nextDouble()-0.5)*(this.areaAP*2);
+				y=(r.nextDouble()-0.5)*(this.areaAP*2);
+			}while (!this.inAreaAPSingle(x, y));
+			this.addDevice(x, y);
+		}
+	}
 	public int getAPofIndex(int index){
 		double x=this.devices.get(index).x;
 		double y=this.devices.get(index).y;
@@ -96,6 +111,9 @@ public class DeviceMap {
 				return true;
 		}
 		return false;
+	}
+	private boolean inAreaAPSingle(double x,double y){
+		return Math.sqrt(x*x+y*y)<this.areaAP;
 	}
 
 }
