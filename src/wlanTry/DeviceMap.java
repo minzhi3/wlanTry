@@ -27,6 +27,7 @@ public class DeviceMap {
 		//accessPoints=new ArrayList<Location>();
 	}
 	public void addDevice(double x, double y){
+		DebugOutput.output(this.devices.size()+": "+x+" "+y);
 		devices.add(new Location(x,y));
 	}
 	/*
@@ -44,6 +45,7 @@ public class DeviceMap {
 			if (Math.sqrt(dx*dx+dy*dy)<carrierSenseRange)
 				ret.add(i);
 		}
+		DebugOutput.outputNeighbor(a, ret);
 		return ret;
 	}
 	/**
@@ -72,16 +74,16 @@ public class DeviceMap {
 	public int getAPofIndex(int index){
 		double x=this.devices.get(index).x;
 		double y=this.devices.get(index).y;
-		if (x>0) {
-			if (y>0) 
+		if (y>0) {
+			if (x>0) 
 				return 0;
 			else return 1;
 		}
 		else{
-			if (y>0)
-				return 2;
-			else
+			if (x>0)
 				return 3;
+			else
+				return 2;
 		}
 	}
 	private boolean inAreaAP(double x,double y){
@@ -90,10 +92,10 @@ public class DeviceMap {
 		for (int i=0;i<4;i++){
 			double dx=x-apX[i];
 			double dy=y-apY[i];
-			if (Math.sqrt(dx*dx+dy*dy)>this.areaAP)
-				return false;
+			if (Math.sqrt(dx*dx+dy*dy)<this.areaAP)
+				return true;
 		}
-		return true;
+		return false;
 	}
 
 }
