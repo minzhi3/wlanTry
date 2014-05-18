@@ -21,6 +21,7 @@ class Pair{
 public class Device implements Runnable {
 
 	public static int[] channel;
+	public int AP;
 	CyclicBarrier barrier;
 	Object key;
 	final int id;
@@ -45,11 +46,12 @@ public class Device implements Runnable {
 		this.senseRange=range;
 		this.state=0;
 		this.request=new TransmissionRequest();
+		this.AP=-1;
     } 
 	@Override
 	public void run() {
 		long begintime = System.nanoTime();
-		for (time=0;time<100000;time++){
+		for (time=0;time<1000000;time++){
 			if (state==0){
 				if (checkChannel()){
 					receiveInit();
@@ -75,14 +77,19 @@ public class Device implements Runnable {
 		}
 		long endtime = System.nanoTime();
 		double costTime = (endtime - begintime)/1e9;
-		System.out.println(costTime+": MT "+this.id+" Tx "+this.packetTx+", Rx "+this.packetRx);
+		System.out.println(
+				costTime+
+				": MT "+this.id+
+				" Tx "+(double)this.packetTx*12000.0/((double)time/1000000.0)/1000000.0+
+				", Rx "+(double)this.packetRx*12000.0/((double)time/1000000.0)/1000000.0
+				);
 	}
 	// -----------------------RECEIVE------------------------
 	/**
 	 * Initialize parameters for receiving. 
 	 */
 	private void receiveInit() {
-		System.out.println(this.time+": MT "+id+" receiving initialized");
+		debugOutput(this.time+": MT "+id+" receiving initialized");
 		state=2;
 		receiveState=0;
 		partner=receiveSignal().id;
@@ -139,7 +146,7 @@ public class Device implements Runnable {
 				receiveComplete(false);
 				break;
 			case 2://start sending ACK
-				System.out.println(this.time+": MT "+id+" sending ACK");
+				debugOutput(this.time+": MT "+id+" sending ACK");
 				receiveState=3;
 				count=40;
 				synchronized(this.key){
@@ -147,7 +154,7 @@ public class Device implements Runnable {
 				}
 				break;
 			case 3://finished sending ACK
-				System.out.println(this.time+": MT "+id+" finished sending ACK");
+				debugOutput(this.time+": MT "+id+" finished sending ACK");
 				synchronized(this.key){
 					channel[id]=-1;
 				}
@@ -187,7 +194,7 @@ public class Device implements Runnable {
 	 * Initialize parameters for sending. 
 	 */
 	private void sendInit(){
-		System.out.println(this.time+": MT "+id+" tranmission initialized");
+		debugOutput(this.time+": MT "+id+" tranmission initialized");
 		state=1;
 		sendState=0;
 		count=34;
@@ -208,7 +215,7 @@ public class Device implements Runnable {
 		state=0;
 	}
 	private void sendInterrupt(){
-		System.out.println(this.time+": MT "+id+" tranmission interruptted");
+		debugOutput(this.time+": MT "+id+" tranmission interruptted");
 		sendState=-1;
 		receiveInit();
 	}
@@ -264,36 +271,38 @@ public class Device implements Runnable {
 				case 0://DIFS
 					sendState=1;
 					count=new Random().nextInt(contentionWindow)*9+9;
-					System.out.println(this.time+": MT "+id+" backoff "+count);
+					debugOutput(this.time+": MT "+id+" backoff "+count);
 					break;
 				case 1://Back-off
 					sendState=2;
-					System.out.println(this.time+": MT "+id+" transmitting");
+					debugOutput(this.time+": MT "+id+" transmitting");
 					count=1000;
 					channel[id]=partner;
 					break;
 				case 2://waiting ACK
-					System.out.println(this.time+": MT "+id+" waiting ACK");
+					debugOutput(this.time+": MT "+id+" waiting ACK");
 					channel[id]=-1;
 					sendState=3;
 					count=90;//EIFS
 					break;
 				case 3://No ACK
-					System.out.println(this.time+": MT "+id+" No ACK");
+					debugOutput(this.time+": MT "+id+" No ACK");
 					sendComplete(false);
 					break;
 				case 4://receive ACK
-					System.out.println(this.time+": MT "+id+" get ACK");
+					debugOutput(this.time+": MT "+id+" get ACK");
 					sendComplete(true);
 					break;
 				case 5://No ACK
-					System.out.println(this.time+": MT "+id+" ACK failed");
+					debugOutput(this.time+": MT "+id+" ACK failed");
 					sendComplete(false);
 					break;
 				}
 			}
 		}
 	}
-	// -----------------------SEND------------------------
-
+	// -----------------------SEND-----------------------
+	private void debugOutput(String s){
+		//System.out.println(s);
+	}
 }

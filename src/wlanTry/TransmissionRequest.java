@@ -10,7 +10,7 @@ public class TransmissionRequest{
 	private int next;
 	public TransmissionRequest(){
 		requestList=new ArrayList<RequestElement>();
-		next=-1;
+		next=0;
 	}
 	/**
 	 * build random transmission request in a fixed data rates;
