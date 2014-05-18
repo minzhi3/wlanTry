@@ -25,7 +25,7 @@ public class Device implements Callable<Double> {
 	public static double sumTx=0;
 	public static double sumRx=0;
 
-	final int timeLength=1000000;
+	final int timeLength=100000;
 	
 	public int AP;
 	CyclicBarrier barrier;
@@ -53,6 +53,7 @@ public class Device implements Callable<Double> {
 		this.state=0;
 		this.request=new TransmissionRequest();
 		this.AP=-1;
+		this.contentionWindow=16;
     } 
 	@Override
 	public Double call() throws Exception {
@@ -203,7 +204,6 @@ public class Device implements Callable<Double> {
 		state=1;
 		sendState=0;
 		count=34;
-		contentionWindow=16;
 		partner=request.getTime().id;
 	}
 	private void sendComplete(boolean success){
@@ -211,10 +211,14 @@ public class Device implements Callable<Double> {
 			this.packetTx++;
 			DebugOutput.output(this.time+": MT "+id+" tranmission successful");
 			request.popFront();
+			this.contentionWindow=16;
 		}
 		else{
 			this.packetTxFails++;
 			DebugOutput.output(this.time+": MT "+id+" tranmission failed");
+			if (this.contentionWindow<1024){
+				this.contentionWindow*=2;
+			}
 		}
 			sendState=-1;
 		state=0;

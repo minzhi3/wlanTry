@@ -28,7 +28,7 @@ public  class DebugOutput {
 	public static void fileDebugInit(){
         try {
 
-            System.setOut(new PrintStream(new FileOutputStream("d:\\system_out.txt")));
+            System.setOut(new PrintStream(new FileOutputStream("d:\\system_out4.txt")));
 
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();

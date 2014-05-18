@@ -9,7 +9,7 @@ public class Main {
 
 	public static void main(String[] args) throws InterruptedException {
 		//DebugOutput.fileDebugInit();
-		for (int i=0;i<100;i+=2){
+		for (int i=0;i<60;i+=4){
 
 			long begintime = System.nanoTime();
 			DebugOutput.time=0;
@@ -18,7 +18,7 @@ public class Main {
 
 			long endtime = System.nanoTime();
 			double costTime = (endtime - begintime)/1e9;
-			DebugOutput.outputAlways("Num="+i/4.0+" Time:"+costTime);
+			//DebugOutput.outputAlways("Num="+i/4.0+" Time:"+costTime);
 		}
 		/*
 		CyclicBarrier cb=new CyclicBarrier(2,new Runnable(){
