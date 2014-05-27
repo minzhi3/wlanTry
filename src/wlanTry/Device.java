@@ -20,12 +20,9 @@ class Pair{
  *
  */
 public class Device implements Callable<Double> {
+	private Channel channel;
 
-	public static int[] channel;
-	public static double sumTx=0;
-	public static double sumRx=0;
-
-	final int timeLength=100000;
+	final int timeLength=500000;
 	
 	public int AP;
 	CyclicBarrier barrier;
@@ -41,7 +38,7 @@ public class Device implements Callable<Double> {
 	int time;
 	int contentionWindow;
 	int packetTx,packetRx,packetTxFails,packetRxFails;
-	public Device(int id,CyclicBarrier cb,Object o,ArrayList<Integer> range) {
+	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
@@ -54,6 +51,7 @@ public class Device implements Callable<Double> {
 		this.request=new TransmissionRequest();
 		this.AP=-1;
 		this.contentionWindow=16;
+		this.channel=ch;
     } 
 	@Override
 	public Double call() throws Exception {
@@ -119,7 +117,7 @@ public class Device implements Callable<Double> {
 		int val=-1;
 		for (int i=0;i<senseRange.size();i++){
 			int k=senseRange.get(i);
-			int p=channel[k];
+			int p=this.channel.ch[k];
 			if (p!=-1){
 				if (val==-1){
 					val=p;
@@ -135,10 +133,24 @@ public class Device implements Callable<Double> {
 		return ret;
 	}
 	private void receiveNextStep() {
+		boolean carrierSense=false;
+		int signal=receiveSignal().value;
+		if (signal!=-1) carrierSense=true; 
+
 		if (count>0){
-			count--;
+			switch (receiveState) {
+			case 2:
+				if (carrierSense){
+					count=10;
+				}else{
+					count--;
+				}
+				break;
+			default:
+				count--;
+				break;
+			}
 		}else{
-			int signal=receiveSignal().value;
 			switch (receiveState){
 			case 0:
 				if (signal==-1){
@@ -156,13 +168,13 @@ public class Device implements Callable<Double> {
 				receiveState=3;
 				count=40;
 				synchronized(this.key){
-					channel[id]=100;
+					this.channel.ch[id]=100;
 				}
 				break;
 			case 3://finished sending ACK
 				DebugOutput.output(this.time+": MT "+id+" finished sending ACK");
 				synchronized(this.key){
-					channel[id]=-1;
+					this.channel.ch[id]=-1;
 				}
 				receiveComplete(true);
 			}
@@ -286,17 +298,17 @@ public class Device implements Callable<Double> {
 					sendState=2;
 					DebugOutput.output(this.time+": MT "+id+" transmitting");
 					count=1000;
-					channel[id]=partner;
+					this.channel.ch[id]=partner;
 					break;
 				case 2://waiting ACK
 					DebugOutput.output(this.time+": MT "+id+" waiting ACK");
-					channel[id]=-1;
+					this.channel.ch[id]=-1;
 					sendState=3;
-					count=90;//EIFS
+					count=78;//EIFS
 					break;
 				case 3://No ACK
 					DebugOutput.output(this.time+": MT "+id+" No ACK");
-					DebugOutput.outputChannel(this.time);
+					this.channel.debugOutput(this.time);
 					sendComplete(false);
 					break;
 				case 4://receive ACK
@@ -312,6 +324,5 @@ public class Device implements Callable<Double> {
 		}
 	}
 	// -----------------------SEND-----------------------
-
 
 }

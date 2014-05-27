@@ -1,7 +1,6 @@
 package wlanTry;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 class Location {
 	public double x;
@@ -12,11 +11,11 @@ class Location {
 	}
 }
 
-public class DeviceMap {
+abstract class DeviceMap {
 	final double distAP=50;
 	final double areaAP=40;
 	public final int carrierSenseRange=50;
-	private ArrayList<Location> devices;
+	protected ArrayList<Location> devices;
 	//private ArrayList<Location> accessPoints; 
 
 	/**
@@ -26,7 +25,7 @@ public class DeviceMap {
 		devices=new ArrayList<Location>();
 		//accessPoints=new ArrayList<Location>();
 	}
-	public void addDevice(double x, double y){
+	protected void addDevice(double x, double y){
 		DebugOutput.output(this.devices.size()+": "+x+" "+y);
 		devices.add(new Location(x,y));
 	}
@@ -52,50 +51,11 @@ public class DeviceMap {
 	 * Create a map with square;
 	 * @param n
 	 */
-	public void createMap(int n){
-		Random r=new Random();
-		double size=distAP/2;
-		//for (int i=0;i<4;i++){
-			this.addDevice(size, size);
-			this.addDevice(-size, size);
-			this.addDevice(-size, -size);
-			this.addDevice(size, -size);
-		//}
-		for (int i=0;i<n;i++){
-			double x;
-			double y;
-			do{
-				x=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
-				y=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
-			}while (!this.inAreaAP(x, y));
-			this.addDevice(x, y);
-		}
-	}
-	public int getAPofIndex(int index){
-		double x=this.devices.get(index).x;
-		double y=this.devices.get(index).y;
-		if (y>0) {
-			if (x>0) 
-				return 0;
-			else return 1;
-		}
-		else{
-			if (x>0)
-				return 3;
-			else
-				return 2;
-		}
-	}
-	private boolean inAreaAP(double x,double y){
-		double apX[]=new double[]{0.5,-0.5,-0.5,0.5};
-		double apY[]=new double[]{0.5,0.5,-0.5,-0.5};
-		for (int i=0;i<4;i++){
-			double dx=x-apX[i];
-			double dy=y-apY[i];
-			if (Math.sqrt(dx*dx+dy*dy)<this.areaAP)
-				return true;
-		}
-		return false;
+	public abstract void createMap(int n);
+	public abstract int getAPofIndex(int index);
+	protected abstract boolean inAreaAP(double x,double y);
+	public int getDeviceNum(){
+		return devices.size();
 	}
 
 }

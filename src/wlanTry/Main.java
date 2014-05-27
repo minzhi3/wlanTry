@@ -1,25 +1,42 @@
 package wlanTry;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 
 public class Main {
 
-	public static void main(String[] args) throws InterruptedException {
-		//DebugOutput.fileDebugInit();
-		for (int i=0;i<60;i+=4){
-
+	public static void main(String[] args) throws Exception {
+		//DebugOutput.fileDebugInit(args[0]);
+		double sum[]=new double[100];
+		int numAP=1;
+		int numMT=25;
+		int RP=1;
+		for (int repeat=0;repeat<RP;repeat++){
+			ArrayList<Future<Double>> results = new ArrayList<Future<Double>>();
+			ExecutorService es = Executors.newCachedThreadPool();
+			DebugOutput.outputAlways("#"+repeat+"#");
 			long begintime = System.nanoTime();
-			DebugOutput.time=0;
-			God g=new God(i);
-			g.run();
+
+			
+			for (int i=0;i<numMT*numAP;i+=numAP){
+				results.add(es.submit(new God(i,numAP)));
+			}
+			for (int i=0;i<numMT;i++){
+				sum[i]+=results.get(i).get();
+			}
+			es.shutdown();
 
 			long endtime = System.nanoTime();
 			double costTime = (endtime - begintime)/1e9;
-			//DebugOutput.outputAlways("Num="+i/4.0+" Time:"+costTime);
+			DebugOutput.outputAlways("Num="+repeat+" Time:"+costTime);
 		}
+		for (int i=0;i<numMT;i++){
+			DebugOutput.outputAlways(sum[i]/RP);
+		}
+		DebugOutput.outputAlways("Over");
 		/*
 		CyclicBarrier cb=new CyclicBarrier(2,new Runnable(){
 			public void run(){
