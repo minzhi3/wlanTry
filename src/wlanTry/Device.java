@@ -19,10 +19,10 @@ class Pair{
  * @author Minzhi
  *
  */
-public class Device implements Callable<Double> {
+public class Device implements Callable<DeviceResult> {
 	private Channel channel;
 
-	final int timeLength=500000;
+	final int timeLength=1000000;
 	
 	public int AP;
 	CyclicBarrier barrier;
@@ -33,28 +33,28 @@ public class Device implements Callable<Double> {
 	int receiveState;
 	int partner;
 	final ArrayList<Integer> senseRange;
-	TransmissionRequest request;
+	TransmissionRequest request;  //The time of sending data
 	int state;
 	int time;
 	int contentionWindow;
-	int packetTx,packetRx,packetTxFails,packetRxFails;
+	int beginWait; //For calculation of delay time
+	DeviceResult ret;
+
 	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
-		this.packetRx=0;
-		this.packetTx=0;
-		this.packetTxFails=0;
-		this.packetRxFails=0;
 		this.senseRange=range;
 		this.state=0;
 		this.request=new TransmissionRequest();
 		this.AP=-1;
 		this.contentionWindow=16;
 		this.channel=ch;
+		ret=new DeviceResult(timeLength);
+		this.beginWait=-1;
     } 
 	@Override
-	public Double call() throws Exception {
+	public DeviceResult call() throws Exception {
 		for (time=0;time<timeLength;time++){
 			if (state==0){
 				if (checkChannel()){
@@ -80,13 +80,7 @@ public class Device implements Callable<Double> {
 			//}
 		}
 
-		/*System.out.println(
-				costTime+
-				": MT "+this.id+
-				" Tx "+(double)this.packetTx*12000.0/((double)time/1000000.0)/1000000.0+
-				", Rx "+(double)this.packetRx*12000.0/((double)time/1000000.0)/1000000.0
-				);*/
-		return (double)this.packetTx*24000.0/((double)timeLength/1000000.0)/1000000.0;
+		return this.ret;
 	}
 	// -----------------------RECEIVE------------------------
 	/**
@@ -182,16 +176,25 @@ public class Device implements Callable<Double> {
 	}
 	private void receiveComplete(boolean success) {
 		if (success){
-			this.packetRx++;
+			this.ret.packetRx++;
 			DebugOutput.output(this.time+": MT "+id+" receiving Complete");
+			if (this.AP==-1){
+				this.replyDataAP();
+			}else{
+				this.ret.sumDelay+=(this.time-this.beginWait);
+			}
+			this.beginWait=-1;
 		}
 		else{
-			this.packetRxFails++;
+			this.ret.packetRxFails++;
 			DebugOutput.output(this.time+": MT "+id+" receiving failed");
 		}
 		receiveState=-1;
 		state=0;
 		
+	}
+	private void replyDataAP(){
+		this.request.addRequest(this.time, this.partner);
 	}
 	// -----------------------RECEIVE END---------------------
 	
@@ -206,7 +209,7 @@ public class Device implements Callable<Double> {
 	 */
 	private boolean checkRequest() {
 		if (request.getTime()==null) return false;
-		return (this.time>request.getTime().time);
+		return (this.time>request.getTime().time && this.beginWait<0);
 	}
 	/**
 	 * Initialize parameters for sending. 
@@ -220,17 +223,21 @@ public class Device implements Callable<Double> {
 	}
 	private void sendComplete(boolean success){
 		if (success){
-			this.packetTx++;
+			this.ret.packetTx++;
 			DebugOutput.output(this.time+": MT "+id+" tranmission successful");
 			request.popFront();
 			this.contentionWindow=16;
+			if (this.AP>=0){
+				this.beginWait=this.time;
+			}
 		}
 		else{
-			this.packetTxFails++;
+			this.ret.packetTxFails++;
 			DebugOutput.output(this.time+": MT "+id+" tranmission failed");
 			if (this.contentionWindow<1024){
 				this.contentionWindow*=2;
 			}
+			this.beginWait=-1;
 		}
 			sendState=-1;
 		state=0;

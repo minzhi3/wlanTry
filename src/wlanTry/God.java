@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 
-public class God implements Callable<Double>{
+public class God implements Callable<GodResult>{
 	public int time=0;
 	int MTNum;
 	int ThreadNum;
@@ -38,8 +38,8 @@ public class God implements Callable<Double>{
 		}
 	}
 	@Override
-	public Double call() throws Exception {
-		if (dm==null) return 0.0;
+	public GodResult call() throws Exception {
+		if (dm==null) return null;
 		//Initializing
 		CyclicBarrier cb=new CyclicBarrier(ThreadNum,new Runnable(){
 			@Override
@@ -59,30 +59,36 @@ public class God implements Callable<Double>{
 			}
 		}
 		//Build request
-		double pps=1/(2.0/3000/8);
+		double pps=1/(1.0/3000/8);
 		//devices[0].buildRequestList(pps, 1, Num-1, 0);
 		for (int i=APNum;i<ThreadNum;i++){
 			devices[i].buildRequestList(pps, devices[i].AP, devices[i].AP, 1000);
 		}
 
 		//Start
-		ArrayList<Future<Double>> results = new ArrayList<Future<Double>>();
+		ArrayList<Future<DeviceResult>> results = new ArrayList<Future<DeviceResult>>();
 		ExecutorService es = Executors.newCachedThreadPool();
 		for (int i=0;i<ThreadNum;i++){
 			results.add(es.submit(devices[i]));
 		}
-		Double sum=(double) 0;
-		for (int i=0;i<ThreadNum;i++){
+		GodResult gr=new GodResult();
+		
+		for (int i=APNum;i<ThreadNum;i++){
 			try {
-				sum+=results.get(i).get();
+				gr.ThroughputTx+=results.get(i).get().getThroughputTx();
+				gr.ThroughputRx+=results.get(i).get().getThroughputRx();
+				gr.DelayTime+=results.get(i).get().getDelayTime();
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		es.shutdown();
+		//gr.ThroughputRx/=(ThreadNum-APNum);
+		//gr.ThroughputTx/=(ThreadNum-APNum);
+		gr.DelayTime/=(ThreadNum-APNum);
 		//DebugOutput.outputAlways("GOD "+APNum);
-		return sum/(APNum);
+		return gr;
 	}
 
 }

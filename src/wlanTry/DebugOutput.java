@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class DebugOutput {
 	public int time=0;
-	public static boolean isDebug=false;
+	public static boolean isDebug=true;
 	public static void output(String s){
 		if (isDebug){
 			System.out.println(s);

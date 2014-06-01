@@ -33,6 +33,9 @@ public class TransmissionRequest{
 		});
 		next=0;
 	}
+	public void addRequest(double time,int id){
+		this.requestList.add(new RequestElement(time,id));
+	}
 	public RequestElement getTime(){
 		if (next<requestList.size()){
 			return requestList.get(next);
