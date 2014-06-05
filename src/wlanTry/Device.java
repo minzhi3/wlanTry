@@ -37,7 +37,7 @@ public class Device implements Callable<DeviceResult> {
 	int state;
 	int time;
 	int contentionWindow;
-	int beginWait; //For calculation of delay time
+	int canSend; //Flag for whether the MT have received data and can continue sending
 	DeviceResult ret;
 
 	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
@@ -51,10 +51,11 @@ public class Device implements Callable<DeviceResult> {
 		this.contentionWindow=16;
 		this.channel=ch;
 		ret=new DeviceResult(timeLength);
-		this.beginWait=-1;
+		this.canSend=0;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
+		this.canSend=1;
 		for (time=0;time<timeLength;time++){
 			if (state==0){
 				if (checkChannel()){
@@ -178,12 +179,11 @@ public class Device implements Callable<DeviceResult> {
 		if (success){
 			this.ret.packetRx++;
 			DebugOutput.output(this.time+": MT "+id+" receiving Complete");
-			if (this.AP==-1){
+			if (this.AP<0){
 				this.replyDataAP();
 			}else{
-				this.ret.sumDelay+=(this.time-this.beginWait);
+				this.canSend=1;
 			}
-			this.beginWait=-1;
 		}
 		else{
 			this.ret.packetRxFails++;
@@ -209,7 +209,12 @@ public class Device implements Callable<DeviceResult> {
 	 */
 	private boolean checkRequest() {
 		if (request.getTime()==null) return false;
-		return (this.time>request.getTime().time && this.beginWait<0);
+		/*
+		if (this.time-request.getTime().time>100000){
+			request.popFront();
+		}
+		*/
+		return (this.time>request.getTime().time && this.canSend>0);
 	}
 	/**
 	 * Initialize parameters for sending. 
@@ -223,13 +228,13 @@ public class Device implements Callable<DeviceResult> {
 	}
 	private void sendComplete(boolean success){
 		if (success){
+			this.ret.sumDelay+=(this.time-request.getTime().time);
+			if (this.AP>=0)
+				this.canSend=0;
 			this.ret.packetTx++;
 			DebugOutput.output(this.time+": MT "+id+" tranmission successful");
 			request.popFront();
 			this.contentionWindow=16;
-			if (this.AP>=0){
-				this.beginWait=this.time;
-			}
 		}
 		else{
 			this.ret.packetTxFails++;
@@ -237,9 +242,8 @@ public class Device implements Callable<DeviceResult> {
 			if (this.contentionWindow<1024){
 				this.contentionWindow*=2;
 			}
-			this.beginWait=-1;
 		}
-			sendState=-1;
+		sendState=-1;
 		state=0;
 	}
 	private void sendInterrupt(){

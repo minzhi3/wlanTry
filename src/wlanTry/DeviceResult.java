@@ -2,7 +2,7 @@ package wlanTry;
 
 public class DeviceResult {
 	int packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
-	int sumDelay;  //For calculation of delay time
+	double sumDelay;  //For calculation of delay time
 	final int timeLength;
 	public DeviceResult(int timeLength){
 		this.packetRx=0;
@@ -26,6 +26,9 @@ public class DeviceResult {
 		return (double)this.packetRx*24000.0/((double)timeLength/1000000.0)/1000000.0;
 	}
 	public double getDelayTime(){
-		return (double)this.sumDelay/(double)packetRx;
+		if (packetTx==0)
+			return -1;
+		else
+			return (double)this.sumDelay/(double)packetTx;
 	}
 }

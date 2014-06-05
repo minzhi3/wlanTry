@@ -73,11 +73,16 @@ public class God implements Callable<GodResult>{
 		}
 		GodResult gr=new GodResult();
 		
+		int withDelayCount=0;
 		for (int i=APNum;i<ThreadNum;i++){
 			try {
 				gr.ThroughputTx+=results.get(i).get().getThroughputTx();
 				gr.ThroughputRx+=results.get(i).get().getThroughputRx();
-				gr.DelayTime+=results.get(i).get().getDelayTime();
+				double delay=results.get(i).get().getDelayTime();
+				if (delay>0){
+					gr.DelayTime+=delay;
+					withDelayCount++;
+				}
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -86,7 +91,7 @@ public class God implements Callable<GodResult>{
 		es.shutdown();
 		//gr.ThroughputRx/=(ThreadNum-APNum);
 		//gr.ThroughputTx/=(ThreadNum-APNum);
-		gr.DelayTime/=(ThreadNum-APNum);
+		gr.DelayTime/=withDelayCount;
 		//DebugOutput.outputAlways("GOD "+APNum);
 		return gr;
 	}

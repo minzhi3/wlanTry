@@ -12,9 +12,9 @@ public class Main {
 		//DebugOutput.fileDebugInit(args[0]);
 		DebugOutput.isDebug=false;
 		GodResult sum[]=new GodResult[100];
-		int numAP=1;
+		int numAP=4;
 		int numMT=25;
-		int RP=1;
+		int RP=5;
 		//God g=new God(1,1);
 		//g.call();
 		
