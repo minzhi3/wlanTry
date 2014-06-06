@@ -25,6 +25,19 @@ public class DeviceResult {
 	public double getThroughputRx(){
 		return (double)this.packetRx*24000.0/((double)timeLength/1000000.0)/1000000.0;
 	}
+	public int getPacketRxFails(){
+		return this.packetRxFails;
+	}
+	public int getPacketTxFails(){
+		return this.packetTxFails;
+	}
+	public int getPacketRx(){
+		return this.packetRx;
+	}
+	public int getPacketTx(){
+		return this.packetTx;
+	}
+	
 	public double getDelayTime(){
 		if (packetTx==0)
 			return -1;

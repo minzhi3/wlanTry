@@ -12,9 +12,9 @@ public class Main {
 		//DebugOutput.fileDebugInit(args[0]);
 		DebugOutput.isDebug=false;
 		GodResult sum[]=new GodResult[100];
-		int numAP=4;
+		int numAP=1;
 		int numMT=25;
-		int RP=5;
+		int RP=1;
 		//God g=new God(1,1);
 		//g.call();
 		
@@ -43,6 +43,8 @@ public class Main {
 		for (int i=0;i<numMT;i++){
 			sum[i].div((double)RP);
 			DebugOutput.outputAlways(sum[i].ThroughputTx+" "+sum[i].ThroughputRx+" "+sum[i].DelayTime+" ");
+			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
+			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
 		DebugOutput.outputAlways("Over");
 		

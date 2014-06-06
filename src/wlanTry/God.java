@@ -62,7 +62,7 @@ public class God implements Callable<GodResult>{
 		double pps=1/(1.0/3000/8);
 		//devices[0].buildRequestList(pps, 1, Num-1, 0);
 		for (int i=APNum;i<ThreadNum;i++){
-			devices[i].buildRequestList(pps, devices[i].AP, devices[i].AP, 1000);
+			devices[i].buildRequestList(pps, devices[i].AP, devices[i].AP, 2000);
 		}
 
 		//Start
@@ -76,8 +76,7 @@ public class God implements Callable<GodResult>{
 		int withDelayCount=0;
 		for (int i=APNum;i<ThreadNum;i++){
 			try {
-				gr.ThroughputTx+=results.get(i).get().getThroughputTx();
-				gr.ThroughputRx+=results.get(i).get().getThroughputRx();
+				gr.add(results.get(i).get());
 				double delay=results.get(i).get().getDelayTime();
 				if (delay>0){
 					gr.DelayTime+=delay;

@@ -38,6 +38,7 @@ public class Device implements Callable<DeviceResult> {
 	int time;
 	int contentionWindow;
 	int canSend; //Flag for whether the MT have received data and can continue sending
+	int storeState,storePartner;
 	DeviceResult ret;
 
 	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
@@ -52,6 +53,7 @@ public class Device implements Callable<DeviceResult> {
 		this.channel=ch;
 		ret=new DeviceResult(timeLength);
 		this.canSend=0;
+		this.storeState=-1;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
@@ -209,6 +211,9 @@ public class Device implements Callable<DeviceResult> {
 	 */
 	private boolean checkRequest() {
 		if (request.getTime()==null) return false;
+		//if (this.canSend>0 && this.time-request.getTime().time>100000){
+			//canSend=1;
+		//}
 		/*
 		if (this.time-request.getTime().time>100000){
 			request.popFront();
@@ -223,8 +228,12 @@ public class Device implements Callable<DeviceResult> {
 		DebugOutput.output(this.time+": MT "+id+" tranmission initialized");
 		state=1;
 		sendState=0;
-		count=34;
-		partner=request.getTime().id;
+		if (storeState>=0) 
+			sendResume();
+		else{
+			count=34;
+			partner=request.getTime().id;
+		}
 	}
 	private void sendComplete(boolean success){
 		if (success){
@@ -248,8 +257,20 @@ public class Device implements Callable<DeviceResult> {
 	}
 	private void sendInterrupt(){
 		DebugOutput.output(this.time+": MT "+id+" tranmission interruptted");
+		if (sendState==1){
+			storeState=count;
+			storePartner=this.partner;
+		}
+		else storeState=-1;
 		sendState=-1;
 		receiveInit();
+	}
+	private void sendResume(){
+		sendState=1;
+		count=storeState;
+		storeState=-1;
+		this.partner=storePartner;
+		storePartner=-1;
 	}
 	private void sendNextStep(){
 		boolean carrierSense=false;
