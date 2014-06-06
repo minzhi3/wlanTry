@@ -32,7 +32,7 @@ public class God implements Callable<GodResult>{
 		if (dm!=null) {
 			dm.createMap(MTNum);
 			this.ThreadNum=dm.getDeviceNum();
-			debugOutput=new DebugOutput();
+			debugOutput=new DebugOutput("C:\\Users\\Huang\\mt\\"+"g.txt");
 			channel=new Channel(this.ThreadNum);
 			APNum=ThreadNum-MTNum;
 		}
@@ -45,9 +45,14 @@ public class God implements Callable<GodResult>{
 			@Override
 			public void run() {
 				debugOutput.time++;
-				//if (DebugOutput.time%10000==0){
-					//DebugOutput.outputAlways("Time="+DebugOutput.time);
-				//}
+				if (debugOutput.time%100==0){
+					StringBuilder sb=new StringBuilder();
+					for (int i=0;i<ThreadNum;i++){
+						sb.append(channel.ch[i]);
+						sb.append(' ');
+					}
+					debugOutput.output(debugOutput.time+": "+sb.toString());
+				}
 			}
 		});
 		Object key=new Object();
@@ -92,6 +97,7 @@ public class God implements Callable<GodResult>{
 		//gr.ThroughputTx/=(ThreadNum-APNum);
 		gr.DelayTime/=withDelayCount;
 		//DebugOutput.outputAlways("GOD "+APNum);
+		debugOutput.close();
 		return gr;
 	}
 

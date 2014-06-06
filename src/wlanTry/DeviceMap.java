@@ -26,7 +26,7 @@ abstract class DeviceMap {
 		//accessPoints=new ArrayList<Location>();
 	}
 	protected void addDevice(double x, double y){
-		DebugOutput.output(this.devices.size()+": "+x+" "+y);
+		//DebugOutput.output(this.devices.size()+": "+x+" "+y);
 		devices.add(new Location(x,y));
 	}
 	/*

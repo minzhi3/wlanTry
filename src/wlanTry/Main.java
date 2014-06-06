@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 public class Main {
 
 	public static void main(String[] args) throws Exception {
-		//DebugOutput.fileDebugInit(args[0]);
+		
 		DebugOutput.isDebug=false;
 		GodResult sum[]=new GodResult[100];
 		int numAP=1;
@@ -28,6 +28,7 @@ public class Main {
 			for (int i=0;i<numMT*numAP;i+=numAP){
 				results.add(es.submit(new God(i,numAP)));
 			}
+			
 			for (int i=0;i<numMT;i++){
 				if (sum[i]==null){
 					sum[i]=new GodResult();

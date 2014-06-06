@@ -25,6 +25,6 @@ public class Channel {
 			sb.append(" ");
 		}
 		sb.append(s);
-		DebugOutput.output(sb.toString());
+		//DebugOutput.output(sb.toString());
 	}
 }
