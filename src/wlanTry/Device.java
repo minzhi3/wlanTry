@@ -37,7 +37,7 @@ public class Device implements Callable<DeviceResult> {
 	int state;
 	int time;
 	int contentionWindow;
-	int canSend; //Flag for whether the MT have received data and can continue sending
+	//int canSend; //Flag for whether the MT have received data and can continue sending
 	int storeState,storePartner;
 	int beginSend;
 	DeviceResult ret;
@@ -54,14 +54,14 @@ public class Device implements Callable<DeviceResult> {
 		this.contentionWindow=16;
 		this.channel=ch;
 		ret=new DeviceResult(timeLength);
-		this.canSend=0;
+		//this.canSend=0;
 		this.storeState=-1;
 		debugOutput=new DebugOutput("C:\\Users\\Huang\\mt\\"+this.id+".txt");
 		this.beginSend=-1;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
-		this.canSend=1;
+		//this.canSend=1;
 		for (time=0;time<timeLength;time++){
 			if (state==0){
 				if (checkChannel()){
@@ -124,8 +124,8 @@ public class Device implements Callable<DeviceResult> {
 					val=p;
 					id=k;
 				}else{
-					id=0xFFFF;
-					val=0xFFFF;
+					id=99999;
+					val=99999;
 					break;
 				}
 			}
@@ -185,11 +185,11 @@ public class Device implements Callable<DeviceResult> {
 		if (success){
 			this.ret.packetRx++;
 			debugOutput.output(this.time+": From "+this.partner+" receiving Complete");
-			if (this.AP<0){
-				this.replyDataAP();
-			}else{
-				this.canSend=1;
-			}
+			//if (this.AP<0){
+			//	this.replyDataAP();
+			//}else{
+			//	this.canSend=1;
+			//}
 		}
 		else{
 			this.ret.packetRxFails++;
@@ -200,7 +200,7 @@ public class Device implements Callable<DeviceResult> {
 		
 	}
 	private void replyDataAP(){
-		this.request.addRequest(this.time, this.partner);
+		//this.request.addRequest(this.time, this.partner);
 	}
 	// -----------------------RECEIVE END---------------------
 	
@@ -222,7 +222,7 @@ public class Device implements Callable<DeviceResult> {
 	 */
 	private boolean checkRequest() {
 		if (request.getTime()==null) return false;
-		//if (this.canSend>0 && this.time-request.getTime().time>100000){
+		//if (this.canSend==0 && this.time-request.getTime().time>10000){
 			//canSend=1;
 		//}
 		/*
@@ -230,7 +230,7 @@ public class Device implements Callable<DeviceResult> {
 			request.popFront();
 		}
 		*/
-		return (this.time>request.getTime().time && this.canSend>0);
+		return this.time>request.getTime().time;
 	}
 	/**
 	 * Initialize parameters for sending. 
@@ -250,8 +250,8 @@ public class Device implements Callable<DeviceResult> {
 	private void sendComplete(boolean success){
 		if (success){
 			this.ret.sumDelay+=(this.time-beginSend);
-			if (this.AP>=0)
-				this.canSend=0;
+			//if (this.AP>=0)
+				//this.canSend=0;
 			this.ret.packetTx++;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission successful");
 			request.popFront();
@@ -263,7 +263,10 @@ public class Device implements Callable<DeviceResult> {
 			debugOutput.output(this.time+": To "+this.partner+" tranmission failed");
 			if (this.contentionWindow<1024){
 				this.contentionWindow*=2;
-			}
+			}//else{
+				//request.popFront();
+				
+			//}
 		}
 		sendState=-1;
 		state=0;
