@@ -22,7 +22,7 @@ class Pair{
 public class Device implements Callable<DeviceResult> {
 	private Channel channel;
 
-	final int timeLength=1000000;
+	final int timeLength=Param.simTimeLength;
 	
 	public int AP;
 	CyclicBarrier barrier;
@@ -37,9 +37,10 @@ public class Device implements Callable<DeviceResult> {
 	int state;
 	int time;
 	int contentionWindow;
-	//int canSend; //Flag for whether the MT have received data and can continue sending
+	boolean canSend; //Flag for whether the MT have received data and can continue sending
 	int storeState,storePartner;
 	int beginSend;
+	int backoffTime;
 	DeviceResult ret;
 	DebugOutput debugOutput;
 
@@ -51,17 +52,17 @@ public class Device implements Callable<DeviceResult> {
 		this.state=0;
 		this.request=new TransmissionRequest();
 		this.AP=-1;
-		this.contentionWindow=16;
+		this.contentionWindow=Param.sizeCWmin;
 		this.channel=ch;
-		ret=new DeviceResult(timeLength);
-		//this.canSend=0;
+		ret=new DeviceResult();
+		this.canSend=true;
 		this.storeState=-1;
-		debugOutput=new DebugOutput("C:\\Users\\Huang\\mt\\"+this.id+".txt");
+		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");
 		this.beginSend=-1;
+		this.backoffTime=0;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
-		//this.canSend=1;
 		for (time=0;time<timeLength;time++){
 			if (state==0){
 				if (checkChannel()){
@@ -94,11 +95,11 @@ public class Device implements Callable<DeviceResult> {
 	 * Initialize parameters for receiving. 
 	 */
 	private void receiveInit() {
-		debugOutput.output(this.time+": From "+this.partner+" receiving initialized");
 		state=2;
 		receiveState=0;
 		partner=receiveSignal().id;
 		count=0;
+		debugOutput.output(this.time+": From "+this.partner+" receiving initialized");
 	}
 	/**
 	 * check whether there is packet transmitting in channel.
@@ -133,74 +134,89 @@ public class Device implements Callable<DeviceResult> {
 		ret.id=id; ret.value=val;
 		return ret;
 	}
+	/**
+	 * The transformation for receiving state
+	 * State 0: Receiving Data
+	 * State 1: SIFS
+	 * State 2: Sending ACK
+	 * State 3: Receiving is failed
+	 */
 	private void receiveNextStep() {
 		boolean carrierSense=false;
 		int signal=receiveSignal().value;
 		if (signal!=-1) carrierSense=true; 
-
-		if (count>0){
-			switch (receiveState) {
-			case 2:
-				if (carrierSense){
-					count=10;
-				}else{
-					count--;
+		
+		if (carrierSense){
+			switch (receiveState){
+			case 0:
+				if (signal!=id){
+					debugOutput.output(this.time+": From "+this.partner+" Error happens");
+					receiveState=3;
 				}
+				break;
+			case 1:
+				debugOutput.output(this.time+": From "+this.partner+" SIFS reset");
+				count=Param.timeSIFS;
 				break;
 			default:
 				count--;
-				break;
 			}
 		}else{
 			switch (receiveState){
-			case 0:
-				if (signal==-1){
-					receiveState=2;
-					count=10;
-				}
-				else if (signal!=id)
-					receiveState=1;
+			case 0://Receiving Data finished
+				debugOutput.output(this.time+": From "+this.partner+"receiving finished, SIFS starts");
+				receiveState=1;
+				count=Param.timeSIFS;
 				break;
-			case 1:
-				receiveComplete(false);
+			case 3://Receiving is failed
+				this.receiveComplete(false);
 				break;
-			case 2://start sending ACK
+			default:
+				count--;
+			}
+		}
+		if (count<=0){
+			switch (receiveState){
+			case 1://Starting sending ACK
+				receiveState=2;
 				debugOutput.output(this.time+": To "+this.partner+" sending ACK");
-				receiveState=3;
-				count=40;
+				count=Param.timeACK;
 				synchronized(this.key){
 					this.channel.ch[id]=1000+this.partner;
 				}
 				break;
-			case 3://finished sending ACK
+			case 2:
 				debugOutput.output(this.time+": To "+this.partner+" finished sending ACK");
 				synchronized(this.key){
 					this.channel.ch[id]=-1;
 				}
-				receiveComplete(true);
+				this.receiveComplete(true);
+				break;
 			}
 		}
 	}
 	private void receiveComplete(boolean success) {
 		if (success){
 			this.ret.packetRx++;
-			debugOutput.output(this.time+": From "+this.partner+" receiving Complete");
-			//if (this.AP<0){
-			//	this.replyDataAP();
-			//}else{
-			//	this.canSend=1;
-			//}
+			debugOutput.output(this.time+": From "+this.partner+" receive Complete");
+			if (Param.withDownlink){
+				if (this.AP<0){
+					this.replyDataAP();
+				}else{
+					this.canSend=true;
+				}
+			}
 		}
 		else{
 			this.ret.packetRxFails++;
-			debugOutput.output(this.time+": From "+this.partner+" receiving failed");
+			debugOutput.output(this.time+": From "+this.partner+" receivie is failed");
 		}
 		receiveState=-1;
 		state=0;
 		
 	}
 	private void replyDataAP(){
-		//this.request.addRequest(this.time, this.partner);
+		this.request.addRequest(this.time, this.partner);
 	}
 	// -----------------------RECEIVE END---------------------
 	
@@ -209,7 +225,7 @@ public class Device implements Callable<DeviceResult> {
 	public void buildRequestList(double pps, int a, int b, int count){
 		request.buildRequestList(pps, a, b, count);
 		StringBuilder sb=new StringBuilder();
-		for (int i=0;i<40;i++){
+		for (int i=0;i<Param.numRequest;i++){
 			sb.append(request.requestList.get(i).time+":"+request.requestList.get(i).id);
 			sb.append(' ');
 		}
@@ -230,38 +246,43 @@ public class Device implements Callable<DeviceResult> {
 			request.popFront();
 		}
 		*/
-		return this.time>request.getTime().time;
+		if (Param.withDownlink)
+			return (this.time>request.getTime().time && this.canSend);
+		else
+			return this.time>request.getTime().time;
 	}
 	/**
 	 * Initialize parameters for sending. 
 	 */
 	private void sendInit(){
-		debugOutput.output(this.time+": To "+this.partner+" tranmission initialized");
 		state=1;
 		sendState=0;
 		if (storeState>=0) 
 			sendResume();
 		else{
-			count=34;
+			count=Param.timeDIFS;
 			partner=request.getTime().id;
 		}
 		if (beginSend<0) beginSend=this.time;
+		debugOutput.output(this.time+": To "+this.partner+" tranmission initialized");
 	}
 	private void sendComplete(boolean success){
 		if (success){
 			this.ret.sumDelay+=(this.time-beginSend);
-			//if (this.AP>=0)
-				//this.canSend=0;
+			if (Param.withDownlink){
+				if (this.AP>=0)
+					this.canSend=false;
+			}
 			this.ret.packetTx++;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission successful");
 			request.popFront();
-			this.contentionWindow=16;
+			this.contentionWindow=Param.sizeCWmin;
 			this.beginSend=-1;
 		}
 		else{
 			this.ret.packetTxFails++;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission failed");
-			if (this.contentionWindow<1024){
+			if (this.contentionWindow<Param.sizeCWmax){
 				this.contentionWindow*=2;
 			}//else{
 				//request.popFront();
@@ -288,6 +309,16 @@ public class Device implements Callable<DeviceResult> {
 		this.partner=storePartner;
 		storePartner=-1;
 	}
+	
+	/**
+	 * The transformation among different send state.
+	 * State 0: DIFS
+	 * State 1: Backoff
+	 * State 2: Transmitting
+	 * State 3: Waiting ACK
+	 * State 4: Receiving ACK
+	 * State 5: ACK failed
+	 */
 	private void sendNextStep(){
 		boolean carrierSense=false;
 		int signal=receiveSignal().value;
@@ -300,10 +331,15 @@ public class Device implements Callable<DeviceResult> {
 		}
 		if (signal!=-1) carrierSense=true; 
 		//}
+		//The transformation when count>0 and carriersense
 		if (carrierSense){
 			switch (sendState){
 			case 0://DIFS
-				count=28;
+				count=Param.timeDIFS;
+				break;
+			case 1://Backoff
+				sendState=0;
+				count=Param.timeDIFS;
 				break;
 			case 2://Transmitting
 				count--;
@@ -324,6 +360,10 @@ public class Device implements Callable<DeviceResult> {
 			}
 		}else{
 			switch (sendState){
+			case 1:
+				backoffTime--;
+				count--;
+				break;
 			case 4:
 				count=0;
 				
@@ -334,25 +374,28 @@ public class Device implements Callable<DeviceResult> {
 			}
 		}
 		
+		//The tranformation when count is 0
 		if (count<=0){
 			synchronized(this.key){
 				switch (sendState){
 				case 0://DIFS
 					sendState=1;
-					count=new Random().nextInt(contentionWindow)*9+9;
+					if (backoffTime<=0) 
+						backoffTime=(new Random().nextInt(contentionWindow)+1)*Param.timeSlot;
+					count=backoffTime;
 					debugOutput.output(this.time+": To "+this.partner+" backoff "+count);
 					break;
 				case 1://Back-off
 					sendState=2;
 					debugOutput.output(this.time+": To "+this.partner+" transmitting");
-					count=1000;
+					count=Param.timeData;
 					this.channel.ch[id]=partner;
 					break;
 				case 2://waiting ACK
 					debugOutput.output(this.time+": To "+this.partner+" waiting ACK");
 					this.channel.ch[id]=-1;
 					sendState=3;
-					count=78;//EIFS
+					count=Param.timeEIFS;//EIFS
 					break;
 				case 3://No ACK
 					debugOutput.output(this.time+": To "+this.partner+" No ACK");

@@ -12,9 +12,9 @@ class Location {
 }
 
 abstract class DeviceMap {
-	final double distAP=50;
-	final double areaAP=40;
-	public final int carrierSenseRange=40;
+	final double distAP=Param.distAP;
+	final double areaAP=Param.areaAP;
+	public final int carrierSenseRange=Param.carrierSenseRange;
 	protected ArrayList<Location> devices;
 	//private ArrayList<Location> accessPoints; 
 

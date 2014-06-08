@@ -51,7 +51,6 @@ public class God implements Callable<GodResult>{
 						sb.append(channel.ch[i]);
 						sb.append(' ');
 					}
-					debugOutput.output(debugOutput.time+": "+sb.toString());
 				}
 			}
 		});
@@ -64,7 +63,7 @@ public class God implements Callable<GodResult>{
 			}
 		}
 		//Build request
-		double pps=1/(2.0/3000/8);
+		double pps=1/Param.packetRequestRates;
 		//devices[0].buildRequestList(pps, 1, Num-1, 0);
 		for (int i=APNum;i<ThreadNum;i++){
 			devices[i].buildRequestList(pps, devices[i].AP, devices[i].AP, 2000);

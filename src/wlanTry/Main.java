@@ -1,6 +1,7 @@
 package wlanTry;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -8,13 +9,50 @@ import java.util.concurrent.Future;
 
 public class Main {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args){
+		if (Param.isDebug)
+			singleEvaluation();
+		else
+			multipleEvaluation();
+	}
+	private static void singleEvaluation(){
+		int numAP=Param.numAP;
+		int numMT=Param.numMT;
+		int RP=Param.simRepeat;
 		
-		DebugOutput.isDebug=false;
-		GodResult sum[]=new GodResult[100];
-		int numAP=4;
-		int numMT=25;
-		int RP=5;
+		GodResult sum=new GodResult();
+		ArrayList<Future<GodResult>> results = new ArrayList<Future<GodResult>>();
+		ExecutorService es = Executors.newCachedThreadPool();
+		
+		long begintime = System.nanoTime();
+		for (int i=0;i<RP;i++){
+			results.add(es.submit(new God(numMT,numAP)));
+		}
+		for (int i=0;i<RP;i++){
+			try {
+				sum.add(results.get(i).get());
+			} catch (InterruptedException | ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		es.shutdown();
+		sum.div((double)RP);
+		
+		long endtime = System.nanoTime();
+		double costTime = (endtime - begintime)/1e9;
+		DebugOutput.outputAlways(" Time:"+costTime);
+		
+		DebugOutput.outputAlways(sum.ThroughputTx/numAP+" "+sum.ThroughputRx/numAP+" "+sum.DelayTime+" ");
+		DebugOutput.outputAlways("Over");
+		
+	}
+	private static void multipleEvaluation(){
+		int numAP=Param.numAP;
+		int numMT=Param.numMT;
+		int RP=Param.simRepeat;
+
+		GodResult sum[]=new GodResult[numMT];
 		//God g=new God(1,1);
 		//g.call();
 		
@@ -33,7 +71,12 @@ public class Main {
 				if (sum[i]==null){
 					sum[i]=new GodResult();
 				}
-				sum[i].add(results.get(i).get());
+				try {
+					sum[i].add(results.get(i).get());
+				} catch (InterruptedException | ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			es.shutdown();
 
@@ -43,14 +86,11 @@ public class Main {
 		}
 		for (int i=0;i<numMT;i++){
 			sum[i].div((double)RP);
-			DebugOutput.outputAlways(sum[i].ThroughputTx+" "+sum[i].ThroughputRx+" "+sum[i].DelayTime+" ");
+			DebugOutput.outputAlways(sum[i].ThroughputTx/numAP+" "+sum[i].ThroughputRx/numAP+" "+sum[i].DelayTime+" ");
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
 		DebugOutput.outputAlways("Over");
-		
-		
-		
 	}
 
 }

@@ -35,7 +35,7 @@ public class DebugOutput {
 		}
 	}
 	public int time=0;
-	public static boolean isDebug=true;
+	public static final boolean isDebug=Param.isDebug;
 	public void output(String s){
 		if (isDebug){
 			try {

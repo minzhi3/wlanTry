@@ -4,13 +4,13 @@ public class DeviceResult {
 	int packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
 	double sumDelay;  //For calculation of delay time
 	final int timeLength;
-	public DeviceResult(int timeLength){
+	public DeviceResult(){
 		this.packetRx=0;
 		this.packetTx=0;
 		this.packetTxFails=0;
 		this.packetRxFails=0;
 		this.sumDelay=0;
-		this.timeLength=timeLength;
+		this.timeLength=Param.simTimeLength;
 	}
 	public double getThroughputTx(){
 		/*System.out.println(
@@ -19,11 +19,11 @@ public class DeviceResult {
 		" Tx "+(double)this.packetTx*12000.0/((double)time/1000000.0)/1000000.0+
 		", Rx "+(double)this.packetRx*12000.0/((double)time/1000000.0)/1000000.0
 		);*/
-		return (double)this.packetTx*24000.0/((double)timeLength/1000000.0)/1000000.0;
+		return (double)this.packetTx*Param.sizeData/((double)timeLength);
 	}
 
 	public double getThroughputRx(){
-		return (double)this.packetRx*24000.0/((double)timeLength/1000000.0)/1000000.0;
+		return (double)this.packetRx*Param.sizeData/((double)timeLength);
 	}
 	public int getPacketRxFails(){
 		return this.packetRxFails;
