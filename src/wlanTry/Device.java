@@ -20,7 +20,7 @@ class Pair{
  *
  */
 public class Device implements Callable<DeviceResult> {
-	private Channel channel;
+	protected Channel channel;
 
 	final int timeLength=Param.simTimeLength;
 	
@@ -43,6 +43,7 @@ public class Device implements Callable<DeviceResult> {
 	int backoffTime;
 	DeviceResult ret;
 	DebugOutput debugOutput;
+	Pair receivedSignal;
 
 	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
 		this.barrier=cb;
@@ -60,10 +61,12 @@ public class Device implements Callable<DeviceResult> {
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");
 		this.beginSend=-1;
 		this.backoffTime=0;
+		this.receivedSignal=new Pair();
     } 
 	@Override
 	public DeviceResult call() throws Exception {
 		for (time=0;time<timeLength;time++){
+			this.receiveSignal();
 			if (state==0){
 				if (checkChannel()){
 					receiveInit();
@@ -97,7 +100,7 @@ public class Device implements Callable<DeviceResult> {
 	private void receiveInit() {
 		state=2;
 		receiveState=0;
-		partner=receiveSignal().id;
+		partner=receivedSignal.id;
 		count=0;
 		debugOutput.output(this.time+": From "+this.partner+" receiving initialized");
 	}
@@ -106,14 +109,14 @@ public class Device implements Callable<DeviceResult> {
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		return (receiveSignal().value==id);
+		return (receivedSignal.value==id);
 	}
 	/**
 	 * received signal from neighbor terminal
 	 * @return 
 	 * integer[2]=(id, value);
 	 */
-	private Pair receiveSignal(){
+	protected void receiveSignal(){
 		Pair ret=new Pair();
 		int id=-1;
 		int val=-1;
@@ -132,7 +135,7 @@ public class Device implements Callable<DeviceResult> {
 			}
 		}
 		ret.id=id; ret.value=val;
-		return ret;
+		this.receivedSignal=ret;
 	}
 	/**
 	 * The transformation for receiving state
@@ -141,9 +144,9 @@ public class Device implements Callable<DeviceResult> {
 	 * State 2: Sending ACK
 	 * State 3: Receiving is failed
 	 */
-	private void receiveNextStep() {
+	protected void receiveNextStep() {
 		boolean carrierSense=false;
-		int signal=receiveSignal().value;
+		int signal=receivedSignal.value;
 		if (signal!=-1) carrierSense=true; 
 		
 		if (carrierSense){
@@ -195,9 +198,9 @@ public class Device implements Callable<DeviceResult> {
 			}
 		}
 	}
-	private void receiveComplete(boolean success) {
+	protected void receiveComplete(boolean success) {
 		if (success){
-			this.ret.packetRx++;
+			this.ret.packetRx+=1;
 			debugOutput.output(this.time+": From "+this.partner+" receive Complete");
 			if (Param.withDownlink){
 				if (this.AP<0){
@@ -208,14 +211,14 @@ public class Device implements Callable<DeviceResult> {
 			}
 		}
 		else{
-			this.ret.packetRxFails++;
+			this.ret.packetRxFails+=1;
 			debugOutput.output(this.time+": From "+this.partner+" receivie is failed");
 		}
 		receiveState=-1;
 		state=0;
 		
 	}
-	private void replyDataAP(){
+	protected void replyDataAP(){
 		this.request.addRequest(this.time, this.partner);
 	}
 	// -----------------------RECEIVE END---------------------
@@ -254,7 +257,7 @@ public class Device implements Callable<DeviceResult> {
 	/**
 	 * Initialize parameters for sending. 
 	 */
-	private void sendInit(){
+	protected void sendInit(){
 		state=1;
 		sendState=0;
 		if (storeState>=0) 
@@ -266,33 +269,33 @@ public class Device implements Callable<DeviceResult> {
 		if (beginSend<0) beginSend=this.time;
 		debugOutput.output(this.time+": To "+this.partner+" tranmission initialized");
 	}
-	private void sendComplete(boolean success){
+	protected void sendComplete(boolean success){
 		if (success){
 			this.ret.sumDelay+=(this.time-beginSend);
 			if (Param.withDownlink){
 				if (this.AP>=0)
 					this.canSend=false;
 			}
-			this.ret.packetTx++;
+			this.ret.packetTx+=1;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission successful");
 			request.popFront();
 			this.contentionWindow=Param.sizeCWmin;
 			this.beginSend=-1;
 		}
 		else{
-			this.ret.packetTxFails++;
+			this.ret.packetTxFails+=1;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission failed");
-			if (this.contentionWindow<Param.sizeCWmax){
-				this.contentionWindow*=2;
-			}//else{
-				//request.popFront();
-				
-			//}
+			this.changeCW();
 		}
 		sendState=-1;
 		state=0;
 	}
-	private void sendInterrupt(){
+	protected void changeCW() {
+		if (this.contentionWindow<Param.sizeCWmax){
+			this.contentionWindow*=2;
+		}
+	}
+	protected void sendInterrupt(){
 		debugOutput.output(this.time+": To "+this.partner+" tranmission interruptted");
 		if (sendState==1){
 			storeState=count;
@@ -319,14 +322,15 @@ public class Device implements Callable<DeviceResult> {
 	 * State 4: Receiving ACK
 	 * State 5: ACK failed
 	 */
-	private void sendNextStep(){
+	protected void sendNextStep(){
 		boolean carrierSense=false;
-		int signal=receiveSignal().value;
+		int signal=receivedSignal.value;
 		//for (int i=0;i<100;i++){
 			//if (i==this.id) continue;
 		if (signal==id){
 			if (sendState==0 || sendState==1){
 				sendInterrupt();
+				return;
 			}
 		}
 		if (signal!=-1) carrierSense=true; 

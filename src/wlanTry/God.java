@@ -8,15 +8,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.hamcrest.core.Is;
+
 
 public class God implements Callable<GodResult>{
 	public int time=0;
 	int MTNum;
 	int ThreadNum;
 	Channel channel;
+	Channel[] controlCh;
 	DeviceMap dm;
 	DebugOutput debugOutput;
 	int APNum;
+	int[] MTcount;
+	public final int numSubPacket;
 	public God(int n,int type){
 		this.MTNum=n;
 		switch (type){
@@ -34,8 +39,18 @@ public class God implements Callable<GodResult>{
 			this.ThreadNum=dm.getDeviceNum();
 			debugOutput=new DebugOutput("C:\\Users\\Huang\\mt\\"+"g.txt");
 			channel=new Channel(this.ThreadNum);
+			
 			APNum=ThreadNum-MTNum;
+
+			MTcount=new int[APNum];
+			controlCh=new Channel[4];
+			for (int i=0;i<APNum;i++){
+				MTcount[i]=0;
+				this.controlCh[i]=new Channel(this.MTNum+1);
+			}
 		}
+
+		this.numSubPacket=(Param.timeData-1)/Param.timeControlSlot/this.MTNum+1;
 	}
 	@Override
 	public GodResult call() throws Exception {
@@ -45,19 +60,30 @@ public class God implements Callable<GodResult>{
 			@Override
 			public void run() {
 				debugOutput.time++;
-				if (debugOutput.time%100==0){
+				if (debugOutput.time%1==0){
 					StringBuilder sb=new StringBuilder();
 					for (int i=0;i<ThreadNum;i++){
 						sb.append(channel.ch[i]);
 						sb.append(' ');
 					}
+					sb.append(" -- ");
+					for (int i=0;i<MTNum+1;i++){
+						sb.append(controlCh[0].ch[i]);
+						sb.append(' ');
+					}
+					debugOutput.output(sb.toString());
 				}
 			}
 		});
 		Object key=new Object();
 		Device[] devices=new Device[ThreadNum];
 		for (int i=0;i<ThreadNum;i++){
-			devices[i]=new Device(i, cb, key, channel, dm.getNeighbour(i));
+			int myAP=dm.getAPofIndex(i);
+			if (myAP==-1) myAP=i;
+			if (Param.isControlChannel)
+				devices[i]=new DeviceDualChannel(i, cb, key, channel,controlCh[myAP],dm.getNeighbour(i),this.numSubPacket,MTcount[myAP]++);
+			else
+				devices[i]=new Device(i, cb, key, channel, dm.getNeighbour(i));
 			if (i>=APNum){
 				devices[i].AP=dm.getAPofIndex(i);
 			}
@@ -94,7 +120,11 @@ public class God implements Callable<GodResult>{
 		es.shutdown();
 		//gr.ThroughputRx/=(ThreadNum-APNum);
 		//gr.ThroughputTx/=(ThreadNum-APNum);
-		gr.DelayTime/=withDelayCount;
+		if (withDelayCount>0) {
+			gr.DelayTime/=withDelayCount;
+		}else {
+			gr.DelayTime=0;
+		}
 		//DebugOutput.outputAlways("GOD "+APNum);
 		debugOutput.close();
 		return gr;
