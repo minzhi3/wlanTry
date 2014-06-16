@@ -26,7 +26,7 @@ public class Main {
 		
 		long begintime = System.nanoTime();
 		for (int i=0;i<RP;i++){
-			results.add(es.submit(new God(numMT,numAP)));
+			results.add(es.submit(new God(numMT*numAP,numAP)));
 		}
 		for (int i=0;i<RP;i++){
 			try {
