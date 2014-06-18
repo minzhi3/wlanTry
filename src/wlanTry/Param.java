@@ -3,12 +3,12 @@ package wlanTry;
 public class Param {
 	public static final String outputPath = "C:\\Users\\Huang\\mt\\";
 	public static final boolean withDownlink = false;
-	public static final int simTimeLength=100000;
-	public static final int numAP=1;
-	public static final int numMT=7;
-	public static final int simRepeat=1;
+	public static final int simTimeLength=1000000;
+	public static final int numAP=4;
+	public static final int numMT=20;
+	public static final int simRepeat=5;
 	public static final boolean isControlChannel = true;
-	public static final boolean isDebug = true;
+	public static final boolean isDebug = false;
 	
 	public static final double throughputRequest=3 + (withDownlink?0:3);  //Mbps
 	public static final int timeSIFS=10;
@@ -19,7 +19,7 @@ public class Param {
 	public static final int sizeCWmax=1024;
 	public static final double dataRates=72; //Mbps
 	
-	public static final int carrierSenseRange=80;
+	public static final int carrierSenseRange=40;
 	public static final int distAP=50;
 	public static final int areaAP=40;
 

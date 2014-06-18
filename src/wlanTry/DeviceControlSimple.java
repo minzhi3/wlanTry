@@ -15,7 +15,7 @@ import java.util.concurrent.CyclicBarrier;
  * @author Minzhi
  *
  */
-public class Device implements Callable<DeviceResult> {
+public class DeviceControlSimple implements Callable<DeviceResult> {
 	protected Channel channel;
 
 	final int timeLength=Param.simTimeLength;
@@ -41,7 +41,7 @@ public class Device implements Callable<DeviceResult> {
 	DebugOutput debugOutput;
 	Pair receivedSignal;
 
-	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
+	public DeviceControlSimple(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
@@ -317,6 +317,7 @@ public class Device implements Callable<DeviceResult> {
 	 * State 3: Waiting ACK
 	 * State 4: Receiving ACK
 	 * State 5: ACK failed
+	 * State 6: Interference detected
 	 */
 	protected void sendNextStep(){
 		boolean carrierSense=false;
@@ -342,7 +343,8 @@ public class Device implements Callable<DeviceResult> {
 				count=Param.timeDIFS;
 				break;
 			case 2://Transmitting
-				count--;
+				count=50;
+				sendState=6;
 				break;
 			case 3:
 				if (signal==1000+this.id){
@@ -356,6 +358,9 @@ public class Device implements Callable<DeviceResult> {
 					sendState=5;
 					count=0;
 				}
+				break;
+			case 6:
+				count--;
 				break;
 			}
 		}else{
@@ -408,6 +413,10 @@ public class Device implements Callable<DeviceResult> {
 					break;
 				case 5://No ACK
 					debugOutput.output(this.time+": To "+this.partner+" ACK failed");
+					sendComplete(false);
+					break;
+				case 6://interference detected
+					debugOutput.output(this.time+": To "+this.partner+" interrupted");
 					sendComplete(false);
 					break;
 				}

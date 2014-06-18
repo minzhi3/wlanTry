@@ -76,14 +76,11 @@ public class God implements Callable<GodResult>{
 			}
 		});
 		Object key=new Object();
-		Device[] devices=new Device[ThreadNum];
+		DeviceControlSimple[] devices=new DeviceControlSimple[ThreadNum];
 		for (int i=0;i<ThreadNum;i++){
 			int myAP=dm.getAPofIndex(i);
 			if (myAP==-1) myAP=i;
-			if (Param.isControlChannel)
-				devices[i]=new DeviceDualChannel(i, cb, key, channel,controlCh[myAP],dm.getNeighbour(i),this.numSubPacket,MTcount[myAP]++);
-			else
-				devices[i]=new Device(i, cb, key, channel, dm.getNeighbour(i));
+			devices[i]=new DeviceControlSimple(i, cb, key, channel,dm.getNeighbour(i));
 			if (i>=APNum){
 				devices[i].AP=dm.getAPofIndex(i);
 			}
