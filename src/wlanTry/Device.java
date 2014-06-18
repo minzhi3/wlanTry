@@ -71,7 +71,7 @@ public class Device implements Callable<DeviceResult> {
 				if (checkChannel()){
 					receiveInit();
 				}
-				if (checkRequest()){
+				if (this.checkRequest()){
 					sendInit();
 				}
 			}
@@ -219,7 +219,7 @@ public class Device implements Callable<DeviceResult> {
 		
 	}
 	protected void replyDataAP(){
-		this.request.addRequest(this.time, this.partner);
+		this.request.addRequest(this.time+100, this.partner);
 	}
 	// -----------------------RECEIVE END---------------------
 	

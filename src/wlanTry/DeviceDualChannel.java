@@ -21,6 +21,7 @@ public class DeviceDualChannel extends Device {
 	int countControl;
 	final int timeSubPacket;
 	final int numSub;
+	int numSubCurrentPacket;
 	final int myNum;
 	
 	public DeviceDualChannel(int i, CyclicBarrier cb, Object key,
@@ -31,6 +32,7 @@ public class DeviceDualChannel extends Device {
 		this.myNum=myNum;
 		this.controlChannel=controlCh;
 		this.receivedSignal=new PairDualChannel();
+
 	}
 	
 	//--------------------------------RECEIVE-BEGIN-----------------------------------------
@@ -46,6 +48,8 @@ public class DeviceDualChannel extends Device {
 	 * State 2: WaitSlot NACK
 	 * State 3: Sending ACK
 	 * State 4: Sending NACK
+	 * State 5: Waiting Final ACK
+	 * State 6: Sending Final ACK
 	 */
 	protected void receiveNextStep() {
 		int signal=receivedSignal.value;
@@ -68,7 +72,7 @@ public class DeviceDualChannel extends Device {
 					this.receiveCount+=1;
 					this.receiveControlState=1;
 					receiveState=0;
-					debugOutput.output(this.time+": From "+this.partner+" received sub at"+this.receiveCount);
+					debugOutput.output(this.time+": From "+this.partner+" received sub at "+this.receiveCount);
 				}
 				break;
 			}
@@ -76,12 +80,12 @@ public class DeviceDualChannel extends Device {
 			switch (receiveState){
 			case 1:
 				this.receiveCount+=1;
-				this.receiveControlState=1;
+				this.receiveControlState=5;
 				receiveState=2;
-				debugOutput.output(this.time+": From "+this.partner+" received sub at"+this.receiveCount);
+				debugOutput.output(this.time+": From "+this.partner+" received sub at "+this.receiveCount);
 			}
 		}
-		if (this.SlotNum==this.myNum){
+		if (this.SlotNum%(Param.numMT+1)==this.myNum){
 			synchronized (key) {
 				switch (receiveControlState){
 				case 1:
@@ -92,6 +96,10 @@ public class DeviceDualChannel extends Device {
 					this.controlChannel.ch[id]=-1000-this.partner;
 					receiveControlState=4;
 					break;
+				case 5:
+					this.controlChannel.ch[id]=1000+this.partner;
+					receiveControlState=6;
+					break;
 				}
 			}
 		}else{
@@ -100,8 +108,6 @@ public class DeviceDualChannel extends Device {
 				case 3:
 					this.controlChannel.ch[id]=-1;
 					receiveControlState=0;
-					if (this.receiveCount>=this.numSub)
-						receiveComplete(true);
 					debugOutput.output(this.time+": To "+this.partner+" sended ACK at "+this.receiveCount);
 					break;
 				case 4:
@@ -110,6 +116,12 @@ public class DeviceDualChannel extends Device {
 					receiveComplete(false);
 					debugOutput.output(this.time+": To "+this.partner+" sended NACK at "+this.receiveCount);
 					break;
+				case 6:
+					this.controlChannel.ch[id]=-1;
+					receiveControlState=0;
+					receiveComplete(true);
+					debugOutput.output(this.time+": To "+this.partner+" sended final ACK ");
+					break;
 				}
 			}
 		}
@@ -117,7 +129,7 @@ public class DeviceDualChannel extends Device {
 	}
 	protected void receiveComplete(boolean success) {
 		if (success){
-			this.ret.packetRx+=1;
+			this.ret.packetRx+=(double)this.receiveCount/this.numSub;
 			debugOutput.output(this.time+": From "+this.partner+" receive Complete");
 			if (Param.withDownlink){
 				if (this.AP<0){
@@ -128,8 +140,8 @@ public class DeviceDualChannel extends Device {
 			}
 		}
 		else{
-			this.ret.packetRxFails+=1;
-			debugOutput.output(this.time+": From "+this.partner+" receivie is failed");
+			this.ret.packetRx+=(double)this.receiveCount/this.numSub;
+			debugOutput.output(this.time+": From "+this.partner+" receivie is failed at "+this.receiveCount);
 		}
 		receiveState=-1;
 		state=0;
@@ -175,12 +187,27 @@ public class DeviceDualChannel extends Device {
 		super.receivedSignal.value=val;
 		this.SlotNum=super.time/Param.timeControlSlot/Param.numMT;
 	}
+	//------------------------------------------SEND----------------------------------------------------
+	public void buildRequestList(double pps, int a, int b, int count){
+		request.buildRequestList(pps, a, b, count);
+		StringBuilder sb=new StringBuilder();
+		for (int i=0;i<Param.numRequest;i++){
+			sb.append(request.requestList.get(i).time+":"+request.requestList.get(i).id);
+			sb.append(' ');
+		}
+		for (int j=0;j<super.request.requestList.size();j++){
+			super.request.requestList.get(j).numSub=this.numSub;
+		}
+		debugOutput.output(sb.toString());
+		
+	}
 	protected void sendInit(){
 		super.sendInit();
 		this.receiveCount=0;
 		this.sendControlState=0;
 		this.countControl=0;
 		this.sendCount=0;
+		this.numSubCurrentPacket=this.request.getTime().numSub;
 	}
 	protected void sendComplete(boolean success){
 		if (success){
@@ -189,23 +216,25 @@ public class DeviceDualChannel extends Device {
 				if (this.AP>=0)
 					this.canSend=false;
 			}
-			this.ret.packetTx+=1;
+			this.ret.packetTx+=(double)this.receiveCount/this.numSub;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission successful");
 			request.popFront();
 			this.contentionWindow=Param.sizeCWmin;
 			this.beginSend=-1;
 		}
 		else{
-			this.ret.packetTxFails+=this.receiveCount/this.numSub;
+			this.ret.packetTx+=(double)this.receiveCount/this.numSub;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission failed at "+ this.receiveCount);
-			this.changeCW();
+			request.getTime().numSub-=this.receiveCount;
+			if (request.getTime().numSub<=0){
+				request.popFront();
+				debugOutput.output("but finished");
+			}
 		}
 		sendState=-1;
 		state=0;
 	}
-	protected void changeCW() {
-		return;
-	}
+
 	/**
 	 * The transformation among different send state.
 	 * State 0: DIFS
@@ -266,13 +295,16 @@ public class DeviceDualChannel extends Device {
 		if (controlSignal!=-1){
 			switch (sendControlState){
 			case 0:
-				if (this.receiveCount>=this.numSub){
+				if (this.receiveCount>=this.numSubCurrentPacket){
 					sendState=6;
 					count=0;
+					debugOutput.output(this.time+": To "+this.partner+" finished with signal " +"C"+this.sendControlState+" "+this.sendState);
 				}else{
 					if (controlSignal==this.id+1000){
 						this.sendControlState=1;
+						debugOutput.output(this.time+": To "+this.partner+" get ACK start " +"C"+this.sendControlState+" "+this.sendState);
 					}else{
+						debugOutput.output(this.time+": To "+this.partner+" get ACK failed " +"C"+this.sendControlState+" "+this.sendState);
 						this.sendState=5;
 						count=0;
 					}
@@ -282,19 +314,23 @@ public class DeviceDualChannel extends Device {
 				if (controlSignal!=this.id+1000){
 					this.receiveCount+=1;
 					this.sendControlState=0;
+					debugOutput.output(this.time+": To "+this.partner+" get ACK end with other signal " +"C"+this.sendControlState+" "+this.sendState);
 				}
 				break;
 			}
 		}else{
 			switch (sendControlState){
 			case 0:
-				if (this.receiveCount>=this.numSub){
+				if (this.receiveCount>=this.numSubCurrentPacket){
 					sendState=6;
+					count=0;
+					debugOutput.output(this.time+": To "+this.partner+" finished with quiet " +"C"+this.sendControlState+" "+this.sendState);
 				}
 				break;
 			case 1:
 				this.receiveCount+=1;
 				this.sendControlState=0;
+				debugOutput.output(this.time+": To "+this.partner+" get ACK end with quiet " +"C"+this.sendControlState+" "+this.sendState);
 				break;
 			}
 		}
@@ -316,16 +352,17 @@ public class DeviceDualChannel extends Device {
 					this.channel.ch[id]=partner;
 					break;
 				case 2://subpacket complete
-					debugOutput.output(this.time+": To "+this.partner+" send subpacket at" + this.sendCount);
+					debugOutput.output(this.time+": To "+this.partner+" send subpacket at " + this.sendCount +" C"+this.sendControlState+" "+this.sendState);
 					this.channel.ch[id]=partner+500;
 					sendState=3;
 					count=Param.timeCRC;//EIFS
 					this.sendCount+=1;
 					break;
 				case 3://next subpacket or waiting enough ack
-					if (this.sendCount>=this.numSub){
+					if (this.sendCount>=this.numSubCurrentPacket){
 						sendState=4;
 						count=Param.timeEIFS;
+						this.channel.ch[id]=-1;
 					}else{
 						count=this.timeSubPacket-Param.timeCRC;
 						this.channel.ch[id]=partner;
@@ -337,10 +374,12 @@ public class DeviceDualChannel extends Device {
 					sendComplete(false);
 					break;
 				case 5://receive ACK
+					this.channel.ch[id]=-1;
 					debugOutput.output(this.time+": To "+this.partner+" interruptted at " + this.receiveCount);
 					sendComplete(false);
 					break;
 				case 6://All ACK received
+					this.channel.ch[id]=-1;
 					debugOutput.output(this.time+": To "+this.partner+" all ACK received");
 					sendComplete(true);
 					break;

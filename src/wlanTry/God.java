@@ -50,7 +50,7 @@ public class God implements Callable<GodResult>{
 			}
 		}
 
-		this.numSubPacket=(Param.timeData-1)/Param.timeControlSlot/this.MTNum+1;
+		this.numSubPacket=(Param.timeData-1)/Param.timeControlSlot/(this.MTNum+1)+1;
 	}
 	@Override
 	public GodResult call() throws Exception {
