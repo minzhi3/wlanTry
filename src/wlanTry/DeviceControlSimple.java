@@ -17,7 +17,8 @@ import java.util.concurrent.CyclicBarrier;
  */
 public class DeviceControlSimple implements Callable<DeviceResult> {
 	protected Channel channel;
-
+	protected Channel controlchannel;
+	
 	final int timeLength=Param.simTimeLength;
 	
 	public int AP;
@@ -36,12 +37,15 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 	boolean canSend; //Flag for whether the MT have received data and can continue sending
 	int storeState,storePartner;
 	int beginSend;
+	int beginCount;
+	int receiveCount;
+	int sendCount;
 	int backoffTime;
 	DeviceResult ret;
 	DebugOutput debugOutput;
 	Pair receivedSignal;
 
-	public DeviceControlSimple(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
+	public DeviceControlSimple(int id,CyclicBarrier cb,Object o,Channel ch,Channel controlCh,ArrayList<Integer> range) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
@@ -58,6 +62,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		this.beginSend=-1;
 		this.backoffTime=0;
 		this.receivedSignal=new Pair();
+		this.controlchannel=controlCh;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
@@ -86,6 +91,8 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 				}
 			//}
 		}
+		ret.packetTx+=this.sendCount/10;
+		ret.packetRx+=this.receiveCount/10;
 		debugOutput.close();
 		return this.ret;
 	}
@@ -99,13 +106,16 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		partner=receivedSignal.id;
 		count=0;
 		debugOutput.output(this.time+": From "+this.partner+" receiving initialized");
+		this.beginSend=receivedSignal.value/100;
+		this.beginCount=this.time;
+		controlchannel.ch[this.id]=-1;
 	}
 	/**
 	 * check whether there is packet transmitting in channel.
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		return (receivedSignal.value==id);
+		return (receivedSignal.value>0 && receivedSignal.value%100==id);
 	}
 	/**
 	 * received signal from neighbor terminal
@@ -124,8 +134,8 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 					val=p;
 					id=k;
 				}else{
-					id=99999;
-					val=99999;
+					id=-99999;
+					val=-99999;
 					break;
 				}
 			}
@@ -148,14 +158,21 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		if (carrierSense){
 			switch (receiveState){
 			case 0:
-				if (signal!=id){
+				if (signal<-1 || signal%100!=id){
 					debugOutput.output(this.time+": From "+this.partner+" Error happens");
 					receiveState=3;
+					this.receiveCount+=(this.time-this.beginCount)/100;
+					synchronized(this.key){
+						this.controlchannel.ch[this.id]=1;
+					}
 				}
 				break;
-			case 1:
-				debugOutput.output(this.time+": From "+this.partner+" SIFS reset");
-				count=Param.timeSIFS;
+			//case 1:
+				//debugOutput.output(this.time+": From "+this.partner+" SIFS reset");
+				//count=Param.timeSIFS;
+				//break;
+			case 3://Receiving is failed
+				count=0;
 				break;
 			default:
 				count--;
@@ -163,9 +180,9 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		}else{
 			switch (receiveState){
 			case 0://Receiving Data finished
-				debugOutput.output(this.time+": From "+this.partner+"receiving finished, SIFS starts");
+				debugOutput.output(this.time+": From "+this.partner+"receiving finished");
 				receiveState=1;
-				count=Param.timeSIFS;
+				count=0;
 				break;
 			case 3://Receiving is failed
 				this.receiveComplete(false);
@@ -177,18 +194,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		if (count<=0){
 			switch (receiveState){
 			case 1://Starting sending ACK
-				receiveState=2;
-				debugOutput.output(this.time+": To "+this.partner+" sending ACK");
-				count=Param.timeACK;
-				synchronized(this.key){
-					this.channel.ch[id]=1000+this.partner;
-				}
-				break;
-			case 2:
-				debugOutput.output(this.time+": To "+this.partner+" finished sending ACK");
-				synchronized(this.key){
-					this.channel.ch[id]=-1;
-				}
+				debugOutput.output(this.time+": To "+this.partner+" finished receiving");
 				this.receiveComplete(true);
 				break;
 			}
@@ -198,6 +204,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		if (success){
 			this.ret.packetRx+=1;
 			debugOutput.output(this.time+": From "+this.partner+" receive Complete");
+			this.ret.sumDelay+=(this.time-beginSend);
 			if (Param.withDownlink){
 				if (this.AP<0){
 					this.replyDataAP();
@@ -208,10 +215,14 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		}
 		else{
 			this.ret.packetRxFails+=1;
-			debugOutput.output(this.time+": From "+this.partner+" receivie is failed");
+			this.ret.sumDelay+=(this.time-beginSend);
+			debugOutput.output(this.time+": From "+this.partner+" receivie is failed with "+receiveCount);
 		}
 		receiveState=-1;
 		state=0;
+		synchronized(this.key){
+			this.controlchannel.ch[this.id]=0;
+		}
 		
 	}
 	protected void replyDataAP(){
@@ -281,7 +292,9 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		else{
 			this.ret.packetTxFails+=1;
 			debugOutput.output(this.time+": To "+this.partner+" tranmission failed");
-			this.changeCW();
+
+			if (this.request.getTime()!=null) this.request.getTime().time=(double)this.time;
+			//request.popFront();
 		}
 		sendState=-1;
 		state=0;
@@ -333,6 +346,14 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		if (signal!=-1) carrierSense=true; 
 		//}
 		//The transformation when count>0 and carriersense
+		if (sendState==0){
+			if (this.controlchannel.ch[partner]>0){
+				debugOutput.output(this.time+": From "+this.partner+" Error happens");
+				count=50;
+				sendState=6;
+				this.sendCount+=(this.time-this.beginCount)/100;
+			}
+		}
 		if (carrierSense){
 			switch (sendState){
 			case 0://DIFS
@@ -343,21 +364,10 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 				count=Param.timeDIFS;
 				break;
 			case 2://Transmitting
+				debugOutput.output(this.time+": From "+this.partner+" Error happens");
 				count=50;
 				sendState=6;
-				break;
-			case 3:
-				if (signal==1000+this.id){
-					count=999;
-					sendState=4;
-					
-				}
-				break;
-			case 4:
-				if (signal!=1000+this.id){
-					sendState=5;
-					count=0;
-				}
+				this.sendCount+=(this.time-this.beginCount)/100;
 				break;
 			case 6:
 				count--;
@@ -368,10 +378,6 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 			case 1:
 				backoffTime--;
 				count--;
-				break;
-			case 4:
-				count=0;
-				
 				break;
 			default:
 				count--;
@@ -394,26 +400,13 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 					sendState=2;
 					debugOutput.output(this.time+": To "+this.partner+" transmitting");
 					count=Param.timeData;
-					this.channel.ch[id]=partner;
+					this.channel.ch[id]=(int)(this.request.getTime().time)*100+partner;
+					this.beginCount=this.time;
 					break;
-				case 2://waiting ACK
-					debugOutput.output(this.time+": To "+this.partner+" waiting ACK");
+				case 2://finish
+					debugOutput.output(this.time+": To "+this.partner+" finished");
 					this.channel.ch[id]=-1;
-					sendState=3;
-					count=Param.timeEIFS;//EIFS
-					break;
-				case 3://No ACK
-					debugOutput.output(this.time+": To "+this.partner+" No ACK");
-					this.channel.debugOutput(this.time);
-					sendComplete(false);
-					break;
-				case 4://receive ACK
-					debugOutput.output(this.time+": To "+this.partner+" get ACK");
 					sendComplete(true);
-					break;
-				case 5://No ACK
-					debugOutput.output(this.time+": To "+this.partner+" ACK failed");
-					sendComplete(false);
 					break;
 				case 6://interference detected
 					debugOutput.output(this.time+": To "+this.partner+" interrupted");

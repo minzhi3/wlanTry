@@ -80,7 +80,7 @@ public class God implements Callable<GodResult>{
 		for (int i=0;i<ThreadNum;i++){
 			int myAP=dm.getAPofIndex(i);
 			if (myAP==-1) myAP=i;
-			devices[i]=new DeviceControlSimple(i, cb, key, channel,dm.getNeighbour(i));
+			devices[i]=new DeviceControlSimple(i, cb, key, channel,controlCh[0],dm.getNeighbour(i));
 			if (i>=APNum){
 				devices[i].AP=dm.getAPofIndex(i);
 			}
@@ -101,12 +101,14 @@ public class God implements Callable<GodResult>{
 		GodResult gr=new GodResult();
 		
 		int withDelayCount=0;
-		for (int i=APNum;i<ThreadNum;i++){
+		
+		for (int i=0;i<APNum;i++){
 			try {
+				double delay=results.get(i).get().getDelayTimeRx();
 				gr.add(results.get(i).get());
-				double delay=results.get(i).get().getDelayTime();
-				if (delay>0){
+				if (delay>1e-6){
 					gr.DelayTime+=delay;
+					//System.out.println(delay);
 					withDelayCount++;
 				}
 			} catch (ExecutionException e) {
