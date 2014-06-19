@@ -6,7 +6,7 @@ public class Param {
 	public static final int simTimeLength=1000000;
 	public static final int numAP=4;
 	public static final int numMT=20;
-	public static final int simRepeat=5;
+	public static final int simRepeat=10;
 	public static final boolean isControlChannel = true;
 	public static final boolean isDebug = false;
 	
