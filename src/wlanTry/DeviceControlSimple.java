@@ -2,6 +2,7 @@ package wlanTry;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
@@ -30,6 +31,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 	int receiveState;
 	int partner;
 	final ArrayList<Integer> senseRange;
+	final Set<Integer> center;
 	TransmissionRequest request;  //The time of sending data
 	int state;
 	int time;
@@ -45,7 +47,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 	DebugOutput debugOutput;
 	Pair receivedSignal;
 
-	public DeviceControlSimple(int id,CyclicBarrier cb,Object o,Channel ch,Channel controlCh,ArrayList<Integer> range) {
+	public DeviceControlSimple(int id,CyclicBarrier cb,Object o,Channel ch,Channel controlCh,ArrayList<Integer> range, Set<Integer> center) {
 		this.barrier=cb;
 		this.key=o;
 		this.id=id;
@@ -63,6 +65,7 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 		this.backoffTime=0;
 		this.receivedSignal=new Pair();
 		this.controlchannel=controlCh;
+		this.center=center;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
@@ -161,7 +164,8 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 				if (signal<-1 || signal%100!=id){
 					debugOutput.output(this.time+": From "+this.partner+" Error happens");
 					receiveState=3;
-					this.receiveCount+=(this.time-this.beginCount)/100;
+					if (center(this.partner)) 
+						this.receiveCount+=(this.time-this.beginCount)/100;
 					synchronized(this.key){
 						this.controlchannel.ch[this.id]=1;
 					}
@@ -200,23 +204,28 @@ public class DeviceControlSimple implements Callable<DeviceResult> {
 			}
 		}
 	}
+	private boolean center(int partner2) {
+		return center.contains(partner2);
+	}
 	protected void receiveComplete(boolean success) {
-		if (success){
-			this.ret.packetRx+=1;
-			debugOutput.output(this.time+": From "+this.partner+" receive Complete");
-			this.ret.sumDelay+=(this.time-beginSend);
-			if (Param.withDownlink){
-				if (this.AP<0){
-					this.replyDataAP();
-				}else{
-					this.canSend=true;
+		if (center(this.partner)){
+			if (success){
+				this.ret.packetRx+=1;
+				debugOutput.output(this.time+": From "+this.partner+" receive Complete");
+				this.ret.sumDelay+=(this.time-beginSend);
+				if (Param.withDownlink){
+					if (this.AP<0){
+						this.replyDataAP();
+					}else{
+						this.canSend=true;
+					}
 				}
 			}
-		}
-		else{
-			this.ret.packetRxFails+=1;
-			this.ret.sumDelay+=(this.time-beginSend);
-			debugOutput.output(this.time+": From "+this.partner+" receivie is failed with "+receiveCount);
+			else{
+				this.ret.packetRxFails+=1;
+				this.ret.sumDelay+=(this.time-beginSend);
+				debugOutput.output(this.time+": From "+this.partner+" receivie is failed with "+receiveCount);
+			}
 		}
 		receiveState=-1;
 		state=0;

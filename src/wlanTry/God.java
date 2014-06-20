@@ -80,7 +80,7 @@ public class God implements Callable<GodResult>{
 		for (int i=0;i<ThreadNum;i++){
 			int myAP=dm.getAPofIndex(i);
 			if (myAP==-1) myAP=i;
-			devices[i]=new DeviceControlSimple(i, cb, key, channel,controlCh[0],dm.getNeighbour(i));
+			devices[i]=new DeviceControlSimple(i, cb, key, channel,controlCh[0],dm.getNeighbour(i),dm.getCenter());
 			if (i>=APNum){
 				devices[i].AP=dm.getAPofIndex(i);
 			}
