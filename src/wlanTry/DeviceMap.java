@@ -1,6 +1,8 @@
 package wlanTry;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 class Location {
 	public double x;
@@ -57,5 +59,15 @@ abstract class DeviceMap {
 	public int getDeviceNum(){
 		return devices.size();
 	}
+	public Set<Integer> getCenter(){
+		Set<Integer> ret=new HashSet<Integer>();
+		double size=distAP/2;
+		for (int i=0;i<devices.size();i++){
+			if (Math.abs(devices.get(i).x)<size && Math.abs(devices.get(i).y)<size)
+				ret.add(i);
+		}
+		return ret;
+	}
+
 
 }

@@ -1,6 +1,7 @@
 package wlanTry;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutionException;
@@ -22,6 +23,7 @@ public class God implements Callable<GodResult>{
 	int APNum;
 	int[] MTcount;
 	public final int numSubPacket;
+	Set<Integer> center;
 	public God(int n,int type){
 		this.MTNum=n;
 		switch (type){
@@ -60,7 +62,7 @@ public class God implements Callable<GodResult>{
 			@Override
 			public void run() {
 				debugOutput.time++;
-				if (debugOutput.time%1==0){
+				if (debugOutput.time%10==0){
 					StringBuilder sb=new StringBuilder();
 					for (int i=0;i<ThreadNum;i++){
 						sb.append(channel.ch[i]);
@@ -77,6 +79,7 @@ public class God implements Callable<GodResult>{
 		});
 		Object key=new Object();
 		Device[] devices=new Device[ThreadNum];
+		this.center=dm.getCenter();
 		for (int i=0;i<ThreadNum;i++){
 			int myAP=dm.getAPofIndex(i);
 			if (myAP==-1) myAP=i;
@@ -102,6 +105,8 @@ public class God implements Callable<GodResult>{
 		
 		int withDelayCount=0;
 		for (int i=APNum;i<ThreadNum;i++){
+			if (!center.contains(i))
+				continue;
 			try {
 				gr.add(results.get(i).get());
 				double delay=results.get(i).get().getDelayTime();
@@ -125,6 +130,9 @@ public class God implements Callable<GodResult>{
 		//DebugOutput.outputAlways("GOD "+APNum);
 		debugOutput.close();
 		return gr;
+	}
+	private boolean center(int partner2) {
+		return center.contains(partner2);
 	}
 
 }
