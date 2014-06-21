@@ -22,6 +22,7 @@ public class God implements Callable<GodResult>{
 	int APNum;
 	int[] MTcount;
 	public final int numSubPacket;
+	public ArrayList<DeviceResult> sender;
 	public God(int n,int type){
 		this.MTNum=n;
 		switch (type){
@@ -51,6 +52,11 @@ public class God implements Callable<GodResult>{
 		}
 
 		this.numSubPacket=(Param.timeData-1)/Param.timeControlSlot/(this.MTNum+1)+1;
+		
+
+		sender=new ArrayList<DeviceResult>();
+		for (int i=0;i<ThreadNum;i++)
+			sender.add(new DeviceResult());
 	}
 	@Override
 	public GodResult call() throws Exception {
@@ -80,7 +86,7 @@ public class God implements Callable<GodResult>{
 		for (int i=0;i<ThreadNum;i++){
 			int myAP=dm.getAPofIndex(i);
 			if (myAP==-1) myAP=i;
-			devices[i]=new DeviceControlSimple(i, cb, key, channel,controlCh[0],dm.getNeighbour(i),dm.getCenter());
+			devices[i]=new DeviceControlSimple(i, cb, key, channel,controlCh[0],dm.getNeighbour(i),ThreadNum);
 			if (i>=APNum){
 				devices[i].AP=dm.getAPofIndex(i);
 			}
@@ -115,6 +121,10 @@ public class God implements Callable<GodResult>{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			for (int j=0;j<devices[i].sender.size();j++){
+				this.sender.get(j).packetTx+=devices[i].sender.get(j).packetTx;
+			}
+			
 		}
 		es.shutdown();
 		//gr.ThroughputRx/=(ThreadNum-APNum);

@@ -1,10 +1,13 @@
 package wlanTry;
 
+import java.util.ArrayList;
+
 public class GodResult {
 	public double ThroughputTx;
 	public double ThroughputRx;
 	public double DelayTime;
 	double packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
+	public ArrayList<Double> sender;
 	public GodResult(){
 		this.ThroughputRx=0;
 		this.ThroughputTx=0;
