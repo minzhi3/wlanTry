@@ -1,6 +1,7 @@
 package wlanTry;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
@@ -43,7 +44,7 @@ public class Device implements Callable<DeviceResult> {
 	int backoffTime;
 	DeviceResult ret;
 	DebugOutput debugOutput;
-	Pair receivedSignal;
+	Signal receivedSignal;
 
 	public Device(int id,CyclicBarrier cb,Object o,Channel ch,ArrayList<Integer> range) {
 		this.barrier=cb;
@@ -61,12 +62,11 @@ public class Device implements Callable<DeviceResult> {
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");
 		this.beginSend=-1;
 		this.backoffTime=0;
-		this.receivedSignal=new Pair();
     } 
 	@Override
 	public DeviceResult call() throws Exception {
 		for (time=0;time<timeLength;time++){
-			this.receiveSignal();
+			this.checkReceiveSignal();
 			if (state==0){
 				if (checkChannel()){
 					receiveInit();
@@ -100,7 +100,7 @@ public class Device implements Callable<DeviceResult> {
 	private void receiveInit() {
 		state=2;
 		receiveState=0;
-		partner=receivedSignal.id;
+		partner=receivedSignal.idFrom;
 		count=0;
 		debugOutput.output(this.time+": From "+this.partner+" receiving initialized");
 	}
@@ -109,33 +109,19 @@ public class Device implements Callable<DeviceResult> {
 	 * @return boolean (state of channel).
 	 */
 	private boolean checkChannel() {
-		return (receivedSignal.value==id);
+		return (receivedSignal.contentString=="DATA");
 	}
 	/**
 	 * received signal from neighbor terminal
 	 * @return 
 	 * integer[2]=(id, value);
 	 */
-	protected void receiveSignal(){
-		Pair ret=new Pair();
-		int id=-1;
-		int val=-1;
-		for (int i=0;i<senseRange.size();i++){
-			int k=senseRange.get(i);
-			int p=this.channel.ch[k];
-			if (p!=-1){
-				if (val==-1){
-					val=p;
-					id=k;
-				}else{
-					id=99999;
-					val=99999;
-					break;
-				}
-			}
-		}
-		ret.id=id; ret.value=val;
-		this.receivedSignal=ret;
+	protected void checkReceiveSignal(){
+		channel.checkSignalOver(this.id);
+		if (channel.getList(this.id).size()==1){
+			this.receivedSignal=channel.getList(this.id).getFirst();
+		}else
+			this.receivedSignal=null;
 	}
 	/**
 	 * The transformation for receiving state
