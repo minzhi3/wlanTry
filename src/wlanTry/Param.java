@@ -32,4 +32,5 @@ public class Param {
 	//Parameter form Control channel
 	public static final int timeControlSlot=10;
 	public static final int timeCRC=5;
+	public static final int numSubpacket=10;
 }

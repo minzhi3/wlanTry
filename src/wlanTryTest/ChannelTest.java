@@ -11,17 +11,17 @@ public class ChannelTest {
 	@Test
 	public void test() {
 		ch=new Channel(3);
-		ch.addSignal(0, 1, "data", 10);
+		ch.addSignal(0, 1, 1, "data", 10);
 		this.stringArray(ch.getString(0));
 		ch.setTime(5);
-		ch.addSignal(0, 1, "ack", 10);
+		ch.addSignal(0, 1, 2, "ack", 10);
 		this.stringArray(ch.getString(0));
-		ch.setTime(5);
+		ch.setTime(10);
 		ch.checkSignalOver(0);
 		this.stringArray(ch.getString(0));
-		ch.setTime(5);
+		ch.setTime(15);
 		ch.checkSignalOver(0);
-		ch.addSignal(0, 1, "DATA2", 10);
+		ch.addSignal(0, 2, 3,"DATA2", 10);
 		this.stringArray(ch.getString(0));
 		
 		

@@ -7,6 +7,9 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 
+import signal.Signal;
+import signal.SignalData;
+
 class Pair{
 	public int id;
 	public int value;
@@ -67,6 +70,7 @@ public class Device implements Callable<DeviceResult> {
 	public DeviceResult call() throws Exception {
 		for (time=0;time<timeLength;time++){
 			this.checkReceiveSignal();
+			this.signalProcess();
 			if (state==0){
 				if (checkChannel()){
 					receiveInit();
@@ -108,8 +112,29 @@ public class Device implements Callable<DeviceResult> {
 	 * check whether there is packet transmitting in channel.
 	 * @return boolean (state of channel).
 	 */
-	private boolean checkChannel() {
-		return (receivedSignal.contentString=="DATA");
+	private void signalProcess() {
+		if (this.receivedSignal==null) return;
+		if (this.time-receivedSignal.getEndTime()>0){
+			debugOutput.output(this.time+": Signal "+receivedSignal.getString()+" received");
+			if (receivedSignal.getErrorState()) return;
+			
+			if (receivedSignal instanceof SignalData){
+				
+			}else{
+				switch (receivedSignal.type){
+				case 0://ACK
+					break;
+				case 1://NACK
+					break;
+				case 2://RTS
+					break;
+				case 3://CTS
+					break;
+				}
+			}
+			
+			
+		}
 	}
 	/**
 	 * received signal from neighbor terminal
@@ -117,11 +142,14 @@ public class Device implements Callable<DeviceResult> {
 	 * integer[2]=(id, value);
 	 */
 	protected void checkReceiveSignal(){
+		channel.setTime(this.time);
 		channel.checkSignalOver(this.id);
-		if (channel.getList(this.id).size()==1){
+		if (!channel.getList(this.id).isEmpty()){
 			this.receivedSignal=channel.getList(this.id).getFirst();
-		}else
+		}else{
 			this.receivedSignal=null;
+		}
+			
 	}
 	/**
 	 * The transformation for receiving state
