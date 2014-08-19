@@ -13,7 +13,7 @@ import signal.Signal;
  *
  */
 abstract class Device implements Callable<DeviceResult> {
-	protected Channel channel;  //shared by all devices
+	protected Channel dataChannel;  //shared by all devices
 	final int id;
 	final int timeLength=Param.simTimeLength;
 	final int AP;  //The ID of AP, -1 means this is AP
@@ -32,7 +32,7 @@ abstract class Device implements Callable<DeviceResult> {
 		this.AP=AP;
 		this.barrier=barrier;
 		this.key=key;
-		this.channel=ch;
+		this.dataChannel=ch;
 		this.neighbor=neighbor;
 		this.requests=requests;
     } 
@@ -41,9 +41,9 @@ abstract class Device implements Callable<DeviceResult> {
 		ret=new DeviceResult();
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");//Debug file
 		
-		while (this.channel.getTime()<timeLength){
-			this.channel.checkSignalOver(this.id);
-			receivedSignal=this.checkReceive();
+		while (this.dataChannel.getTime()<timeLength){
+			this.dataChannel.checkSignalOver(this.id);
+			
 			this.receiveProcess();
 			
 			if (this.checkReply()){
@@ -63,7 +63,6 @@ abstract class Device implements Callable<DeviceResult> {
 		return this.ret;
 	}
 	
-	protected abstract Signal checkReceive();
 	protected abstract void receiveProcess();
 	protected abstract boolean checkReply();
 	protected abstract boolean checkTransmit();
