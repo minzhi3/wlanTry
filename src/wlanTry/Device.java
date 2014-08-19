@@ -2,18 +2,12 @@ package wlanTry;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 
 import signal.Signal;
-import signal.SignalData;
 
-class Pair{
-	public int id;
-	public int value;
-};
 /**
  * The base class of device.
  *
@@ -25,30 +19,30 @@ abstract class Device implements Callable<DeviceResult> {
 	final int AP;  //The ID of AP, -1 means this is AP
 	final CyclicBarrier barrier;
 	final Object key;  //key for synchronize
-	final ArrayList<Integer> senseRange;  //neighbor
-	TransmissionRequest request;  //The time of sending data
+	final ArrayList<Integer> neighbor;  //neighbor
+	LinkedList<Request> requests;  //The time of sending data
 	
 	Signal receivedSignal;
 	DeviceResult ret;
 	DebugOutput debugOutput;
-	int time;  //current simulation time
 
 
-	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch,ArrayList<Integer> senseRange, TransmissionRequest request) {
+	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch,ArrayList<Integer> neighbor, LinkedList<Request> requests) {
 		this.id=id;
 		this.AP=AP;
 		this.barrier=barrier;
 		this.key=key;
 		this.channel=ch;
-		this.senseRange=senseRange;
-		this.request=request;
+		this.neighbor=neighbor;
+		this.requests=requests;
     } 
 	@Override
 	public DeviceResult call() throws Exception {
 		ret=new DeviceResult();
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");//Debug file
 		
-		for (time=0;time<timeLength;time++){
+		while (this.channel.getTime()<timeLength){
+			this.channel.checkSignalOver(this.id);
 			receivedSignal=this.checkReceive();
 			this.receiveProcess();
 			
