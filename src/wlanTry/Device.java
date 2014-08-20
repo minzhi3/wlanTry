@@ -1,7 +1,6 @@
 package wlanTry;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
@@ -20,14 +19,14 @@ abstract class Device implements Callable<DeviceResult> {
 	final CyclicBarrier barrier;
 	final Object key;  //key for synchronize
 	final ArrayList<Integer> neighbor;  //neighbor
-	LinkedList<Request> requests;  //The time of sending data
+	RequestsQueue requests;  //The time of sending data
 	
 	Signal receivedSignal;
 	DeviceResult ret;
 	DebugOutput debugOutput;
 
 
-	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch,ArrayList<Integer> neighbor, LinkedList<Request> requests) {
+	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch,ArrayList<Integer> neighbor, RequestsQueue requests) {
 		this.id=id;
 		this.AP=AP;
 		this.barrier=barrier;

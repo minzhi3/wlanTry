@@ -1,10 +1,11 @@
 package wlanTry;
 
 public class DeviceResult {
-	double packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
+	int packetTx,packetRx,packetTxFails,packetRxFails,access; //For calculation of throughput
 	double sumDelay;  //For calculation of delay time
 	final int timeLength;
 	public DeviceResult(){
+		this.access=0;
 		this.packetRx=0;
 		this.packetTx=0;
 		this.packetTxFails=0;
@@ -44,4 +45,22 @@ public class DeviceResult {
 		else
 			return (double)this.sumDelay/(double)packetTx;
 	}
+	public void accessChannel(){
+	}
+	public void receiveACK(){
+	}
+	public void receiveNACK(){
+	}
+	public void receiveDATA(){
+	}
+	public void transmittingStart(){
+		
+	}
+	public void retransmit(){
+	}
+	public void reply(PacketType type){
+	}
+
+	
+	
 }

@@ -1,18 +1,25 @@
 package wlanTry;
 
+import signal.Signal;
+
 public class Request{
 	public double time;
-	public int toID;
+	public int IDTo;
 	public int numSub;
-	public PacketType content;
-	public int packetID;
-
-	public Request(int toID, double time,int packetID, int numSub, PacketType content){
+	public PacketType type;
+	public int IDPacket;
+	public int length;
+	
+	public Request(int IDTo, double time,int IDPacket, PacketType type,int numSub,int length){
 		this.time=time;
-		this.toID=toID;
+		this.IDTo=IDTo;
 		this.numSub=numSub;
-		this.packetID=packetID;
-		this.content=content;
+		this.IDPacket=IDPacket;
+		this.type=type;
+		this.length=length;
+	}
+	public Signal toSignal(int IDFrom, int begin){
+		return new Signal(IDFrom, IDTo, IDPacket, type, numSub, begin, length);
 	}
 }
 
