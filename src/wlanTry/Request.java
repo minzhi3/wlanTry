@@ -9,7 +9,15 @@ public class Request{
 	public PacketType type;
 	public int IDPacket;
 	public int length;
-	
+	/**
+	 * Construct a Request
+	 * @param IDTo
+	 * @param time
+	 * @param IDPacket
+	 * @param type
+	 * @param numSub
+	 * @param length
+	 */
 	public Request(int IDTo, double time,int IDPacket, PacketType type,int numSub,int length){
 		this.time=time;
 		this.IDTo=IDTo;

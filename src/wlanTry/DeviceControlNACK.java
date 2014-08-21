@@ -25,6 +25,7 @@ public class DeviceControlNACK extends Device {
 			RequestsQueue requests) {
 		super(id, AP, barrier, key, ch, senseRange, requests);
 		this.controlChannel=controlChannel;
+		this.replyRequests=new RequestsQueue();
 		this.IDSlot=id%(Param.numMT+1);
 	}
 
@@ -34,13 +35,17 @@ public class DeviceControlNACK extends Device {
 		receivedSignal=dataChannel.getSignal(id);
 		receivedControlSignal=controlChannel.getSignal(id);
 		
+		
 		carrierSense=(receivedSignal!=null);
+		if (carrierSense) debugOutput.output(receivedSignal.getString()+" Received");
 		//Receive for data channel
 		if (receivedSignal!=null && receivedSignal.IDTo==id){
+			debugOutput.output(" --ID OK");
 			switch (receivedSignal.type){
 				case DATA:  //Reply the ACK signal
-					if (receivedSignal.error=false){
+					if (receivedSignal.error==false){
 						ret.receiveDATA();
+						debugOutput.output(" --Error Detected --Reply NACK");
 						replyRequests.addRequest(new Request(
 								receivedSignal.IDFrom, 
 								dataChannel.currentTime, 
@@ -49,6 +54,7 @@ public class DeviceControlNACK extends Device {
 								1,
 								Param.timeControlSlot-2));
 					}else{
+						debugOutput.output(" --Available DATA --Reply ACK");
 						replyRequests.addRequest(new Request(
 								receivedSignal.IDFrom, 
 								dataChannel.currentTime, 
@@ -64,9 +70,11 @@ public class DeviceControlNACK extends Device {
 		}
 		
 		//receive for control channel
+		if (receivedControlSignal!=null) debugOutput.output(receivedControlSignal.getString()+" Received");
 		if (receivedControlSignal!=null && receivedControlSignal.IDTo==id){
 			switch (receivedSignal.type){
 			case ACK:
+				debugOutput.output(" --Type ACK");
 				if (requests.getSubpacket()<=1)
 					stateTransmit=0;
 				
@@ -74,6 +82,7 @@ public class DeviceControlNACK extends Device {
 				requests.popSubpacket();
 				break;
 			case NACK:
+				debugOutput.output(" --Type NACK");
 				ret.receiveNACK();
 				stateTransmit=0;
 				dataChannel.retrieveSignal(
@@ -104,7 +113,7 @@ public class DeviceControlNACK extends Device {
 		if (stateTransmit>0)
 			return true;
 		else
-			return requests.getTranmitTime()<dataChannel.currentTime;
+			return super.requests.getTranmitTime()<dataChannel.currentTime;
 	}
 
 	@Override
@@ -112,12 +121,15 @@ public class DeviceControlNACK extends Device {
 		switch (stateTransmit){
 		
 		case 0://Initial
+
+			debugOutput.output("Transmitting Starts");
 			stateTransmit=1;
 			countIFS=Param.timeDIFS;
 			sizeCW=Param.sizeCWmin;
 			break;
 			
 		case 1://DIFS
+			debugOutput.output(" --DIFS "+countIFS);
 			if (countIFS<=0){
 				stateTransmit=2;
 				if (countBackoff<=0)
@@ -131,9 +143,10 @@ public class DeviceControlNACK extends Device {
 			break;
 			
 		case 2://Backoff
+			debugOutput.output(" --Backoff "+countBackoff);
 			if (countBackoff<=0){
 				stateTransmit=3;
-				countTransmit=Param.timeData;
+				countTransmit=requests.getFirst().length;
 				
 				dataChannel.addSignal(neighbor, id, requests.getFirst());
 				//Access successfully
@@ -146,6 +159,7 @@ public class DeviceControlNACK extends Device {
 			}
 			break;
 		case 3://Transmitting Data
+			debugOutput.output(" --Transmitting "+countTransmit);
 			if (countTransmit<=0){
 				stateTransmit=4;
 				countIFS=Param.timeEIFS;
@@ -154,6 +168,7 @@ public class DeviceControlNACK extends Device {
 			}
 			break;
 		case 4://EIFS
+			debugOutput.output(" --Waiting ACK/NACK "+countIFS);
 			if (countIFS<=0){
 				stateTransmit=0;
 				ret.retransmit();
@@ -172,11 +187,14 @@ public class DeviceControlNACK extends Device {
 	protected void replyProcess() {
 		switch (stateReply){
 		case 0://Initial
+			debugOutput.output("Replying Starts ");
 			stateReply=1;
 			break;
 		case 1:
+			debugOutput.output(" --Waiting Slots");
 			int currentSlot=(dataChannel.getTime()/Param.timeControlSlot)/(Param.numMT+1);
 			if (currentSlot==this.IDSlot){
+				debugOutput.output(" --Reply "+replyRequests.getFirst().type);
 				controlChannel.addSignal(neighbor, id, replyRequests.getFirst());
 
 				ret.reply(replyRequests.getFirst().type);

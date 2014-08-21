@@ -4,6 +4,9 @@ import java.util.LinkedList;
 
 public class RequestsQueue {
 	LinkedList<Request> requests;
+	public RequestsQueue(){
+		requests=new LinkedList<Request>();
+	}
 	
 	public Request getFirst(){
 		return requests.peekFirst();

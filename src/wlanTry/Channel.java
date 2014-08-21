@@ -65,14 +65,6 @@ public class Channel {
 		}
 	}
 		
-	public String[] getString(int num){
-		String[] ret=new String[chArray.get(num).size()];
-		int i=0; int j=0;
-		for (Signal s:chArray.get(i)){
-			ret[j++]=s.getString();
-		}
-		return ret;
-	}
 	public void checkSignalOver(int num){
 		ListIterator<Signal> li=chArray.get(num).listIterator();
 		while (li.hasNext()){
@@ -94,6 +86,9 @@ public class Channel {
 	public int getTime(){
 		return currentTime;
 	}
+	public void tic(){
+		currentTime++;
+	}
 	
 	/**
 	 * Return Signal with correct IDTo.
@@ -114,7 +109,7 @@ public class Channel {
 		}
 		return chArray.get(IDDevice).peekFirst();
 	}
-	private void checkCollision(int num){
+	public void checkCollision(int num){
 		if (this.chArray.get(num).size()>1){
 			ListIterator<Signal> li=chArray.get(num).listIterator();
 			while (li.hasNext()){
@@ -122,5 +117,28 @@ public class Channel {
 				s.errorHappen();
 			}
 		}
+	}
+	//-------------------------------DEBUG------------------------------------------
+	public String[] getString(int num){
+		String[] ret=new String[chArray.get(num).size()];
+		int j=0;
+		for (Signal s:chArray.get(num)){
+			ret[j++]=s.getString();
+		}
+		return ret;
+	}
+	public String ToString(){
+		StringBuilder sb=new StringBuilder();
+		for (LinkedList<Signal> signals:chArray){
+			if (signals.size()==0)
+				sb.append("-----");
+			else if (signals.size()>1){
+				sb.append("XXXXX");
+			}else{
+				sb.append(signals.peekFirst().type);
+			}
+			sb.append('\t');
+		}
+		return sb.toString();
 	}
 }

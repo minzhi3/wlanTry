@@ -40,7 +40,6 @@ public class DebugOutput {
 		if (isDebug){
 			try {
 				bw.write(s);
-				bw.newLine();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

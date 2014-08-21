@@ -36,6 +36,6 @@ public class Signal{
 		return error;
 	}
 	public String getString(){
-		return this.IDTo+" "+this.IDPacket+" "+this.type.getName()+" "+this.timeBegin+" "+this.timeLength+(this.error?"x":"o");
+		return this.IDFrom+"->"+this.IDTo+", ID:"+this.IDPacket+"-"+this.numSubpacket+" "+this.type.getName()+" "+this.timeBegin+" "+this.timeLength+(this.error?"x":"o");
 	}
 }

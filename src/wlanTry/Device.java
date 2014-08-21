@@ -41,6 +41,7 @@ abstract class Device implements Callable<DeviceResult> {
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");//Debug file
 		
 		while (this.dataChannel.getTime()<timeLength){
+			debugOutput.output(dataChannel.getTime()+": ");
 			this.dataChannel.checkSignalOver(this.id);
 			
 			this.receiveProcess();
@@ -57,6 +58,7 @@ abstract class Device implements Callable<DeviceResult> {
 			} catch (BrokenBarrierException | InterruptedException e) {
 				e.printStackTrace();
 			}
+			debugOutput.output("\n");
 		}
 		debugOutput.close();
 		return this.ret;
