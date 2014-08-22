@@ -8,8 +8,7 @@ import signal.Signal;
 
 public class DeviceControlNACK extends Device {
 	RequestsQueue replyRequests;
-	Channel controlChannel;
-	Signal receivedControlSignal;
+	//Signal receivedControlSignal;
 	
 	final int IDSlot;
 	int stateTransmit;
@@ -17,14 +16,14 @@ public class DeviceControlNACK extends Device {
 	int countIFS;
 	int countBackoff;
 	int countTransmit;
+	int countReply;
 	int sizeCW;
 	boolean carrierSense;
 	
 	public DeviceControlNACK(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, Channel controlChannel, ArrayList<Integer> senseRange,
 			RequestsQueue requests) {
-		super(id, AP, barrier, key, ch, senseRange, requests);
-		this.controlChannel=controlChannel;
+		super(id, AP, barrier, key, ch, controlChannel, senseRange, requests);
 		this.replyRequests=new RequestsQueue();
 		this.IDSlot=id%(Param.numMT+1);
 	}
@@ -32,70 +31,81 @@ public class DeviceControlNACK extends Device {
 
 	@Override
 	protected void receiveProcess() {
-		receivedSignal=dataChannel.getSignal(id);
-		receivedControlSignal=controlChannel.getSignal(id);
+		//receivedSignal=dataChannel.getSignal(id);
+		//receivedControlSignal=controlChannel.getSignal(id);
+
+		carrierSense=(dataChannel.getSignal(id)!=null);
 		
-		
-		carrierSense=(receivedSignal!=null);
-		if (carrierSense) debugOutput.output(receivedSignal.getString()+" Received");
-		//Receive for data channel
-		if (receivedSignal!=null && receivedSignal.IDTo==id){
-			debugOutput.output(" --ID OK");
-			switch (receivedSignal.type){
-				case DATA:  //Reply the ACK signal
-					if (receivedSignal.error==false){
-						ret.receiveDATA();
-						debugOutput.output(" --Error Detected --Reply NACK");
-						replyRequests.addRequest(new Request(
-								receivedSignal.IDFrom, 
-								dataChannel.currentTime, 
-								receivedSignal.IDPacket, 
-								PacketType.NACK,
-								1,
-								Param.timeControlSlot-2));
-					}else{
-						debugOutput.output(" --Available DATA --Reply ACK");
-						replyRequests.addRequest(new Request(
-								receivedSignal.IDFrom, 
-								dataChannel.currentTime, 
-								receivedSignal.IDPacket, 
-								PacketType.ACK,
-								1,
-								Param.timeControlSlot-2));
-					}
+		if (!dataSignals.isEmpty()){
+			Signal receivedSignal=dataSignals.get(0);
+			debugOutput.output(receivedSignal.getString()+" Received");
+			//Receive for data channel
+			if (receivedSignal.IDTo==id){
+				debugOutput.output(" --ID OK");
+				switch (receivedSignal.type){
+					case DATA:  //Reply the ACK signal
+						if (receivedSignal.error==true){
+							ret.receiveDATA();
+							debugOutput.output(" --Error Detected --Reply NACK");
+							replyRequests.addRequest(new Request(
+									receivedSignal.IDFrom, 
+									dataChannel.currentTime, 
+									receivedSignal.IDPacket, 
+									PacketType.NACK,
+									1,
+									Param.timeControlSlot-2));
+						}else{
+							debugOutput.output(" --Available DATA --Reply ACK");
+							replyRequests.addRequest(new Request(
+									receivedSignal.IDFrom, 
+									dataChannel.currentTime, 
+									receivedSignal.IDPacket, 
+									PacketType.ACK,
+									1,
+									Param.timeControlSlot-2));
+						}
+						break;
+				default:
 					break;
-			default:
-				break;
+				}
 			}
 		}
 		
 		//receive for control channel
-		if (receivedControlSignal!=null) debugOutput.output(receivedControlSignal.getString()+" Received");
-		if (receivedControlSignal!=null && receivedControlSignal.IDTo==id){
-			switch (receivedSignal.type){
+
+		if (!controlSignals.isEmpty()){
+			Signal receivedControlSignal=controlSignals.get(0);
+			debugOutput.output(receivedControlSignal.getString()+" Received");
+			switch (receivedControlSignal.type){
 			case ACK:
-				debugOutput.output(" --Type ACK");
-				if (requests.getSubpacket()<=1)
-					stateTransmit=0;
-				
-				ret.receiveACK();
-				requests.popSubpacket();
+				if (receivedControlSignal.IDTo==id){
+					debugOutput.output(" --Type ACK");
+					if (requests.getSubpacket()<=1)
+						stateTransmit=0;
+					
+					ret.receiveACK();
+					requests.popSubpacket();
+				}
 				break;
-			case NACK:
+			case NACK://Any NACK except from itself can stop transmitting
+				if (receivedControlSignal.IDFrom!=id){
 				debugOutput.output(" --Type NACK");
 				ret.receiveNACK();
 				stateTransmit=0;
-				dataChannel.retrieveSignal(
-						neighbor, 
-						receivedSignal.IDFrom,
-						receivedSignal.IDPacket,
-						receivedSignal.type
-						);
+				synchronized(key){
+					dataChannel.retrieveSignal(
+							neighbor,
+							receivedControlSignal.IDFrom,
+							PacketType.DATA
+							);
+					}
+				}
 				break;
 				
 			default:
 				break;
 			}
+			debugOutput.output("|");
 		}
 	}
 
@@ -133,7 +143,9 @@ public class DeviceControlNACK extends Device {
 			if (countIFS<=0){
 				stateTransmit=2;
 				if (countBackoff<=0)
+					//countBackoff=70;
 					countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
+					
 			}
 			if (!carrierSense){
 				countIFS--;
@@ -147,8 +159,9 @@ public class DeviceControlNACK extends Device {
 			if (countBackoff<=0){
 				stateTransmit=3;
 				countTransmit=requests.getFirst().length;
-				
-				dataChannel.addSignal(neighbor, id, requests.getFirst());
+				synchronized(key){
+					dataChannel.addSignal(neighbor, id, requests.getFirst());
+				}
 				//Access successfully
 				ret.accessChannel();
 			}
@@ -192,16 +205,27 @@ public class DeviceControlNACK extends Device {
 			break;
 		case 1:
 			debugOutput.output(" --Waiting Slots");
-			int currentSlot=(dataChannel.getTime()/Param.timeControlSlot)/(Param.numMT+1);
+			int currentSlot=(dataChannel.getTime()/Param.timeControlSlot)%(Param.numMT+1);
+			debugOutput.output(" --Now "+currentSlot+" Need "+this.IDSlot);
 			if (currentSlot==this.IDSlot){
 				debugOutput.output(" --Reply "+replyRequests.getFirst().type);
-				controlChannel.addSignal(neighbor, id, replyRequests.getFirst());
+				
+				synchronized(key){
+					controlChannel.addSignal(neighbor, id, replyRequests.getFirst());
+				}
 
 				ret.reply(replyRequests.getFirst().type);
 				replyRequests.popSubpacket();
-				stateReply=0;
+				stateReply=2;
+				countReply=Param.timeControlSlot;
 			}
 			break;
+		case 2:
+			if (countReply<=0){
+				stateReply=0;
+			}else {
+				countReply--;
+			}
 		}
 
 	}

@@ -13,6 +13,7 @@ import signal.Signal;
  */
 abstract class Device implements Callable<DeviceResult> {
 	protected Channel dataChannel;  //shared by all devices
+	protected Channel controlChannel;
 	final int id;
 	final int timeLength=Param.simTimeLength;
 	final int AP;  //The ID of AP, -1 means this is AP
@@ -21,17 +22,21 @@ abstract class Device implements Callable<DeviceResult> {
 	final ArrayList<Integer> neighbor;  //neighbor
 	RequestsQueue requests;  //The time of sending data
 	
-	Signal receivedSignal;
+	ArrayList<Signal> dataSignals;
+	ArrayList<Signal> controlSignals;
+	
+	//Signal receivedSignal;
 	DeviceResult ret;
 	DebugOutput debugOutput;
 
 
-	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch,ArrayList<Integer> neighbor, RequestsQueue requests) {
+	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch, Channel controlChannel, ArrayList<Integer> neighbor, RequestsQueue requests) {
 		this.id=id;
 		this.AP=AP;
 		this.barrier=barrier;
 		this.key=key;
 		this.dataChannel=ch;
+		this.controlChannel=controlChannel;
 		this.neighbor=neighbor;
 		this.requests=requests;
     } 
@@ -40,26 +45,32 @@ abstract class Device implements Callable<DeviceResult> {
 		ret=new DeviceResult();
 		debugOutput=new DebugOutput(Param.outputPath+"D"+this.id+".txt");//Debug file
 		
-		while (this.dataChannel.getTime()<timeLength){
-			debugOutput.output(dataChannel.getTime()+": ");
-			this.dataChannel.checkSignalOver(this.id);
-			
-			this.receiveProcess();
-			
-			if (this.checkReply()){
-				this.replyProcess();
-			}
-			if (this.checkTransmit()){
-				this.transmitProcess();
-			}
+		try {
+			while (this.dataChannel.getTime()<timeLength){
+				debugOutput.output(dataChannel.getTime()+": ");
+				synchronized(key){
+					dataSignals=this.dataChannel.checkSignalOver(this.id);
+					controlSignals=this.controlChannel.checkSignalOver(id);
+				}
+				
+				this.receiveProcess();
+				
+				if (this.checkReply()){
+					this.replyProcess();
+				}
+				if (this.checkTransmit()){
+					this.transmitProcess();
+				}
 
-			try {
 				barrier.await();
-			} catch (BrokenBarrierException | InterruptedException e) {
-				e.printStackTrace();
+
+				debugOutput.output("\n");
 			}
-			debugOutput.output("\n");
+		} catch (Exception e) {
+			debugOutput.close();
+			e.printStackTrace();
 		}
+
 		debugOutput.close();
 		return this.ret;
 	}

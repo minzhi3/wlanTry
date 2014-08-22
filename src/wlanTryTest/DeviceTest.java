@@ -42,9 +42,12 @@ public class DeviceTest {
 		req0=new RequestsQueue();
 		req1=new RequestsQueue();
 		req2=new RequestsQueue();
-		req0.addRequest(new Request(1, 10, 1, PacketType.DATA, 10, 20));
-		req1.addRequest(new Request(0, 100, 2, PacketType.DATA, 5, 20));
-		req2.addRequest(new Request(1, 500, 3, PacketType.DATA, 10, 20));
+		for (int i=0;i<100;i++){
+			req0.addRequest(new Request(1, 500*i+10, 1, PacketType.DATA, 10, 30));
+			req1.addRequest(new Request(0, 500*i+100, 2, PacketType.DATA, 10, 30));
+			req2.addRequest(new Request(1, 500*i+10, 3, PacketType.DATA, 10, 30));
+			//req1.addRequest(new Request(2, 310, 4, PacketType.DATA, 5, 30));
+		}
 	}
 	@Test
 	public void test() {
@@ -56,8 +59,8 @@ public class DeviceTest {
 			public void run() {
 				dataChannel.tic();
 				controlChannel.tic();
-				debugChannel.output(dataChannel.getTime()+": "+dataChannel.ToString());
-				debugChannel.output("   CH: "+controlChannel.ToString());
+				debugChannel.output(dataChannel.getTime()+":\t"+dataChannel.ToString());
+				debugChannel.output("CH:\t"+controlChannel.ToString());
 				debugChannel.output("\n");
 				System.out.println(dataChannel.getTime());
 			}

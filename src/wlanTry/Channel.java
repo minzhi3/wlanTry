@@ -1,5 +1,6 @@
 package wlanTry;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -50,26 +51,37 @@ public class Channel {
 	}
 	*/
 	
-	public void retrieveSignal(List<Integer> neighbor,int IDFrom, int IDPacket, PacketType type){
-		for (int IDTo : neighbor) {
-			this.retrieveSignal(IDTo, IDFrom, IDPacket, type);
+	public void retrieveSignal(List<Integer> neighbor, int IDTo, PacketType type){
+		for (int destation : neighbor) {
+			this.retrieveSignal(destation, IDTo, type);
 		}
 	}
-	private void retrieveSignal(int IDTo,int IDFrom,int IDPacket, PacketType type){
-		ListIterator<Signal> li=chArray.get(IDTo).listIterator();
-		while (li.hasNext()){
-			Signal s=li.next();
-			if (s.IDPacket==IDPacket && s.type==type){
-				li.remove();
+	private void retrieveSignal(int destation, int IDTo, PacketType type){
+		//List<Signal> delList = new ArrayList<Signal>();
+		ListIterator<Signal> li=chArray.get(destation).listIterator();
+		Signal s;
+		//try {
+			while (li.hasNext()){
+				s=li.next();
+				if (s.IDTo==IDTo && type==s.type){
+					li.remove();
+				}
 			}
-		}
+		//} catch (Exception e) {
+		//	System.out.println("DD");
+		//}
+		
+		//chArray.get(destation).removeAll(delList);
 	}
 		
-	public void checkSignalOver(int num){
+	public ArrayList<Signal> checkSignalOver(int num){
+		ArrayList<Signal> ret=new ArrayList<Signal>();
 		ListIterator<Signal> li=chArray.get(num).listIterator();
+		//List<Signal> delList = new ArrayList<Signal>();
 		while (li.hasNext()){
 			Signal s=li.next();
 			if (s.getEndTime()<=this.currentTime){
+				ret.add(s);
 				if (s.numSubpacket<=1)
 					li.remove();
 				else {
@@ -79,6 +91,8 @@ public class Channel {
 				}
 			}
 		}
+		//chArray.get(num).removeAll(delList);
+		return ret;
 	}
 	public void setTime(int time){
 		this.currentTime=time;
@@ -102,8 +116,8 @@ public class Channel {
 		while (li.hasNext()){
 			Signal s=li.next();
 			if (s.IDTo==IDDevice){
-				chArray.get(IDDevice).addFirst(s);
 				li.remove();
+				chArray.get(IDDevice).addFirst(s);
 			}
 			break;
 		}
@@ -132,12 +146,17 @@ public class Channel {
 		for (LinkedList<Signal> signals:chArray){
 			if (signals.size()==0)
 				sb.append("-----");
-			else if (signals.size()>1){
-				sb.append("XXXXX");
-			}else{
-				sb.append(signals.peekFirst().type);
+			else {
+				for (Signal s: signals)
+				{
+					sb.append(s.type);
+					sb.append(s.IDPacket);
+					sb.append('-');
+					sb.append(s.numSubpacket);
+					sb.append('/');
+				}
 			}
-			sb.append('\t');
+			sb.append("\t");
 		}
 		return sb.toString();
 	}
