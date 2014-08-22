@@ -2,7 +2,11 @@ package wlanTry;
 
 public class DeviceResult {
 	int packetTx,packetRx,packetTxFails,packetRxFails,access; //For calculation of throughput
-	double sumDelay;  //For calculation of delay time
+	int timeBegin;
+	
+	int sumDelay;  //For calculation of delay time
+	int countDelay;
+	
 	final int timeLength;
 	public DeviceResult(){
 		this.access=0;
@@ -40,27 +44,33 @@ public class DeviceResult {
 	}
 	
 	public double getDelayTime(){
-		if (packetTx<1e-6)
-			return 0;
-		else
-			return (double)this.sumDelay/(double)packetTx;
+		return (double)this.sumDelay/(double)countDelay;
+		//return countDelay;
 	}
 	public void accessChannel(){
 	}
 	public void receiveACK(){
+		packetTx++;
 	}
 	public void receiveNACK(){
+		packetTxFails++;
 	}
 	public void receiveDATA(){
+		packetRx++;
 	}
-	public void transmittingStart(){
-		
+	public void transmittingStart(int time){
+		timeBegin=time;
 	}
 	public void retransmit(){
 	}
 	public void reply(PacketType type){
 	}
-
-	
-	
+	public void transmittingEnds(int time) {
+		int delayTime=time-timeBegin;
+		countDelay++;
+		sumDelay+=delayTime;
+	}
+	public void receiveError() {
+		packetRxFails++;
+	}
 }

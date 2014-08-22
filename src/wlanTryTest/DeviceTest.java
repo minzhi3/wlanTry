@@ -45,7 +45,7 @@ public class DeviceTest {
 		for (int i=0;i<100;i++){
 			req0.addRequest(new Request(1, 500*i+10, 1, PacketType.DATA, 10, 30));
 			req1.addRequest(new Request(0, 500*i+100, 2, PacketType.DATA, 10, 30));
-			req2.addRequest(new Request(1, 500*i+10, 3, PacketType.DATA, 10, 30));
+			req2.addRequest(new Request(1, 500*i+210, 3, PacketType.DATA, 10, 30));
 			//req1.addRequest(new Request(2, 310, 4, PacketType.DATA, 5, 30));
 		}
 	}
@@ -78,13 +78,17 @@ public class DeviceTest {
 		results.add(es.submit(d1));
 		results.add(es.submit(d2));
 		
+		ArrayList<DeviceResult> results2=new ArrayList<DeviceResult>();
 		for (int i=0;i<3;i++){
 			try {
-				results.get(i).get();
+				results2.add(results.get(i).get());
 			} catch (InterruptedException | ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		for (int i=0;i<3;i++){
+			System.out.println("MT"+i+": "+results2.get(i).getPacketRx()+" "+results2.get(i).getPacketTx()+" "+results2.get(i).getDelayTime());
 		}
 	}
 

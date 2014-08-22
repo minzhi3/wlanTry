@@ -11,10 +11,13 @@ public class RequestsQueue {
 	public Request getFirst(){
 		return requests.peekFirst();
 	}
-	public void popSubpacket(){
+	public boolean popSubpacket(){
 		this.getFirst().numSub--;
-		if (this.getFirst().numSub==0)
+		if (this.getFirst().numSub==0){
 			requests.removeFirst();
+			return true;
+		}
+		return false;
 	}
 	public void addRequest(Request r){
 		this.requests.add(r);

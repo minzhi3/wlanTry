@@ -44,8 +44,8 @@ public class DeviceControlNACK extends Device {
 				debugOutput.output(" --ID OK");
 				switch (receivedSignal.type){
 					case DATA:  //Reply the ACK signal
-						if (receivedSignal.error==true){
-							ret.receiveDATA();
+						if (receivedSignal.error){
+							ret.receiveError();
 							debugOutput.output(" --Error Detected --Reply NACK");
 							replyRequests.addRequest(new Request(
 									receivedSignal.IDFrom, 
@@ -56,6 +56,7 @@ public class DeviceControlNACK extends Device {
 									Param.timeControlSlot-2));
 						}else{
 							debugOutput.output(" --Available DATA --Reply ACK");
+							ret.receiveDATA();
 							replyRequests.addRequest(new Request(
 									receivedSignal.IDFrom, 
 									dataChannel.currentTime, 
@@ -84,7 +85,8 @@ public class DeviceControlNACK extends Device {
 						stateTransmit=0;
 					
 					ret.receiveACK();
-					requests.popSubpacket();
+					boolean wholePacket=requests.popSubpacket();
+					if (wholePacket) ret.transmittingEnds(dataChannel.getTime()); 
 				}
 				break;
 			case NACK://Any NACK except from itself can stop transmitting
@@ -133,6 +135,7 @@ public class DeviceControlNACK extends Device {
 		case 0://Initial
 
 			debugOutput.output("Transmitting Starts");
+			if (requests.getFirst().numSub==10) ret.transmittingStart(dataChannel.getTime());
 			stateTransmit=1;
 			countIFS=Param.timeDIFS;
 			sizeCW=Param.sizeCWmin;
