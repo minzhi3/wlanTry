@@ -4,7 +4,12 @@ import java.util.Random;
 
 
 public class DeviceMapAP4 extends DeviceMap {
-	public void createMap(int n){
+	public DeviceMapAP4(int n) {
+		super(n);
+	}
+
+	public void createMap(){
+
 		Random r=new Random();
 		double size=distAP/2;
 		//for (int i=0;i<4;i++){
@@ -13,7 +18,7 @@ public class DeviceMapAP4 extends DeviceMap {
 			super.addDevice(-size, -size);
 			super.addDevice(size, -size);
 		//}
-		for (int i=0;i<n;i++){
+		for (int i=0;i<numMT*4;i++){
 			double x;
 			double y;
 			do{

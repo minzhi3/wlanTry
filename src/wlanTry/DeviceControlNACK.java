@@ -21,13 +21,12 @@ public class DeviceControlNACK extends Device {
 	boolean carrierSense;
 	
 	public DeviceControlNACK(int id, int AP, CyclicBarrier barrier, Object key,
-			Channel ch, Channel controlChannel, ArrayList<Integer> senseRange,
-			RequestsQueue requests) {
-		super(id, AP, barrier, key, ch, controlChannel, senseRange, requests);
+			Channel ch, Channel controlChannel, DeviceMap dm) {
+		super(id, AP, barrier, key, ch, controlChannel, dm);
 		this.replyRequests=new RequestsQueue();
-		this.IDSlot=id%(Param.numMT+1);
+		this.IDSlot=id%(dm.numMT);
 	}
-
+	
 
 	@Override
 	protected void receiveProcess() {
@@ -208,7 +207,7 @@ public class DeviceControlNACK extends Device {
 			break;
 		case 1:
 			debugOutput.output(" --Waiting Slots");
-			int currentSlot=(dataChannel.getTime()/Param.timeControlSlot)%(Param.numMT+1);
+			int currentSlot=(dataChannel.getTime()/Param.timeControlSlot)%dMap.numMT;
 			debugOutput.output(" --Now "+currentSlot+" Need "+this.IDSlot);
 			if (currentSlot==this.IDSlot){
 				debugOutput.output(" --Reply "+replyRequests.getFirst().type);

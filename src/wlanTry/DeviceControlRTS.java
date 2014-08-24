@@ -6,7 +6,7 @@ import java.util.concurrent.CyclicBarrier;
 public class DeviceControlRTS extends Device {
 	RequestsQueue replyRequests;
 	//Signal receivedControlSignal;
-	
+	final int numMT;
 	final int IDSlot;
 	int stateTransmit;
 	int stateReply;
@@ -18,11 +18,11 @@ public class DeviceControlRTS extends Device {
 	boolean carrierSense;
 	
 	public DeviceControlRTS(int id, int AP, CyclicBarrier barrier, Object key,
-			Channel ch, Channel controlChannel, ArrayList<Integer> neighbor,
-			RequestsQueue requests) {
-		super(id, AP, barrier, key, ch, controlChannel, neighbor, requests);
+			Channel ch, Channel controlChannel, DeviceMap dm) {
+		super(id, AP, barrier, key, ch, controlChannel, dm);
 		this.replyRequests=new RequestsQueue();
-		this.IDSlot=id%(Param.numMT+1);
+		this.numMT=dMap.numMT;
+		this.IDSlot=id%(numMT);
 	}
 
 	@Override

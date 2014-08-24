@@ -20,26 +20,30 @@ abstract class Device implements Callable<DeviceResult> {
 	final CyclicBarrier barrier;
 	final Object key;  //key for synchronize
 	final ArrayList<Integer> neighbor;  //neighbor
+	final DeviceMap dMap;
 	RequestsQueue requests;  //The time of sending data
+	//DebugOutput debugChannel;
 	
 	ArrayList<Signal> dataSignals;
 	ArrayList<Signal> controlSignals;
 	
 	//Signal receivedSignal;
 	DeviceResult ret;
-	DebugOutput debugOutput;
+	DebugOutput debugOutput = null;
 
 
-	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch, Channel controlChannel, ArrayList<Integer> neighbor, RequestsQueue requests) {
+	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch, Channel controlChannel, DeviceMap dm) {
 		this.id=id;
 		this.AP=AP;
 		this.barrier=barrier;
 		this.key=key;
 		this.dataChannel=ch;
 		this.controlChannel=controlChannel;
-		this.neighbor=neighbor;
-		this.requests=requests;
+		this.dMap=dm;
+		this.neighbor=dMap.getNeighbour(id);
+		this.requests=dMap.getRequests(id);
     } 
+	
 	@Override
 	public DeviceResult call() throws Exception {
 		ret=new DeviceResult();
@@ -61,7 +65,6 @@ abstract class Device implements Callable<DeviceResult> {
 				if (this.checkTransmit()){
 					this.transmitProcess();
 				}
-
 				barrier.await();
 
 				debugOutput.output("\n");

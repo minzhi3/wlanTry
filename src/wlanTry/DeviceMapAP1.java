@@ -4,11 +4,14 @@ import java.util.Random;
 
 public class DeviceMapAP1 extends DeviceMap {
 
+	public DeviceMapAP1(int n) {
+		super(n);
+	}
 	@Override
-	public void createMap(int n){
+	public void createMap(){
 		Random r=new Random();
 		this.addDevice(0, 0);
-		for (int i=0;i<n;i++){
+		for (int i=0;i<numMT;i++){
 			double x;
 			double y;
 			do{
@@ -24,4 +27,5 @@ public class DeviceMapAP1 extends DeviceMap {
 	public int getAPofIndex(int index) {
 		return 0;
 	}
+
 }

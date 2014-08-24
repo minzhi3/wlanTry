@@ -144,11 +144,14 @@ public class Channel {
 	public String ToString(){
 		StringBuilder sb=new StringBuilder();
 		for (LinkedList<Signal> signals:chArray){
-			if (signals.size()==0)
+			if (signals.isEmpty())
 				sb.append("-----");
 			else {
-				for (Signal s: signals)
+				ListIterator<Signal> li=signals.listIterator();
+				Signal s;
+				while (li.hasNext())
 				{
+					s=li.next();
 					sb.append(s.type);
 					sb.append(s.IDPacket);
 					sb.append('-');

@@ -1,5 +1,7 @@
 package wlanTry;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 
 public class RequestsQueue {
@@ -33,6 +35,14 @@ public class RequestsQueue {
 			return 0;
 		}else
 			return this.getFirst().numSub;
+	}
+	public void sort(){
+		Collections.sort(this.requests, new Comparator<Request>() {
+			@Override
+			public int compare(Request o1, Request o2) {
+				return o1.time<o2.time?-1:1;
+			}
+		});
 	}
 
 }

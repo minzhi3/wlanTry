@@ -8,93 +8,70 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.hamcrest.core.Is;
 
 
 public class God implements Callable<GodResult>{
-	public int time=0;
-	int MTNum;
+	int numMT;
 	int ThreadNum;
-	Channel channel;
-	Channel[] controlCh;
+	Channel dataChannel;
+	Channel controlChannel;
 	DeviceMap dm;
-	DebugOutput debugOutput;
-	int APNum;
-	int[] MTcount;
-	public final int numSubPacket;
+
 	public God(int n,int type){
-		this.MTNum=n;
+		this.numMT=n;
 		switch (type){
 		case 1:
-			dm=new DeviceMapAP1();
+			dm=new DeviceMapAP1(numMT);
 			break;
 		case 4:
-			dm=new DeviceMapAP4();
+			dm=new DeviceMapAP4(numMT);
 			break;
 		default:
 			dm=null;
 		}
 		if (dm!=null) {
-			dm.createMap(MTNum);
-			this.ThreadNum=dm.getDeviceNum();
-			debugOutput=new DebugOutput("C:\\Users\\Huang\\mt\\"+"g.txt");
-			channel=new Channel(this.ThreadNum);
+			dm.createMap();
 			
-			APNum=ThreadNum-MTNum;
+			double pps=1/Param.packetRequestRates;
+			dm.createRequest(pps);
+			this.ThreadNum=dm.getDeviceNum();
 
-			MTcount=new int[APNum];
-			controlCh=new Channel[4];
-			for (int i=0;i<APNum;i++){
-				MTcount[i]=0;
-				this.controlCh[i]=new Channel(this.MTNum+1);
-			}
 		}
 
-		this.numSubPacket=(Param.timeData-1)/Param.timeControlSlot/(this.MTNum+1)+1;
 	}
 	@Override
 	public GodResult call() throws Exception {
 		if (dm==null) return null;
 		//Initializing
+		dataChannel=new Channel(ThreadNum);
+		controlChannel=new Channel(ThreadNum);
+		final DebugOutput debugChannel=new DebugOutput(Param.outputPath+"channel.txt");
 		CyclicBarrier cb=new CyclicBarrier(ThreadNum,new Runnable(){
 			@Override
 			public void run() {
-				debugOutput.time++;
-				if (debugOutput.time%1==0){
-					StringBuilder sb=new StringBuilder();
-					for (int i=0;i<ThreadNum;i++){
-						sb.append(channel.ch[i]);
-						sb.append(' ');
-					}
-					sb.append(" -- ");
-					for (int i=0;i<MTNum+1;i++){
-						sb.append(controlCh[0].ch[i]);
-						sb.append(' ');
-					}
-					debugOutput.output(sb.toString());
-				}
+				dataChannel.tic();
+				controlChannel.tic();
+				debugChannel.output(dataChannel.getTime()+":\t"+dataChannel.ToString());
+				debugChannel.output("CH:\t"+controlChannel.ToString());
+				debugChannel.output("\n");
+				System.out.println(dataChannel.getTime());
 			}
 		});
+		
 		Object key=new Object();
 		Device[] devices=new Device[ThreadNum];
-		for (int i=0;i<ThreadNum;i++){
-			int myAP=dm.getAPofIndex(i);
-			if (myAP==-1) myAP=i;
-			if (Param.isControlChannel)
-				devices[i]=new DeviceDualChannel(i, cb, key, channel,controlCh[myAP],dm.getNeighbour(i),this.numSubPacket,MTcount[myAP]++);
-			else
-				devices[i]=new Device(i, cb, key, channel, dm.getNeighbour(i));
-			if (i>=APNum){
-				devices[i].AP=dm.getAPofIndex(i);
+		for (int i=0;i<ThreadNum;i++){//Add devices
+			switch (Param.deviceType){
+			case CSMA:
+				//devices[i]=new DeviceCSMA(i,cb,key,channel,dm.getNeighbour(i),dm.getRequests(i));
+				break;
+			case ControlChannelNACK:
+				devices[i]=new DeviceControlNACK(i,dm.getAPofIndex(i), cb,key, dataChannel, controlChannel, dm);
+				break;
+			default:
+				break;
 			}
 		}
-		//Build request
-		double pps=1/Param.packetRequestRates;
-		//devices[0].buildRequestList(pps, 1, Num-1, 0);
-		for (int i=APNum;i<ThreadNum;i++){
-			devices[i].buildRequestList(pps, devices[i].AP, devices[i].AP, 2000);
-		}
-
 		//Start
 		ArrayList<Future<DeviceResult>> results = new ArrayList<Future<DeviceResult>>();
 		ExecutorService es = Executors.newCachedThreadPool();
@@ -103,30 +80,16 @@ public class God implements Callable<GodResult>{
 		}
 		GodResult gr=new GodResult();
 		
-		int withDelayCount=0;
-		for (int i=APNum;i<ThreadNum;i++){
+		for (int i=Param.numAP;i<ThreadNum;i++){
 			try {
 				gr.add(results.get(i).get());
-				double delay=results.get(i).get().getDelayTime();
-				if (delay>0){
-					gr.DelayTime+=delay;
-					withDelayCount++;
-				}
 			} catch (ExecutionException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		es.shutdown();
-		//gr.ThroughputRx/=(ThreadNum-APNum);
-		//gr.ThroughputTx/=(ThreadNum-APNum);
-		if (withDelayCount>0) {
-			gr.DelayTime/=withDelayCount;
-		}else {
-			gr.DelayTime=0;
-		}
 		//DebugOutput.outputAlways("GOD "+APNum);
-		debugOutput.close();
 		return gr;
 	}
 

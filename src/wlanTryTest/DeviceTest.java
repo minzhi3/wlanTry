@@ -15,46 +15,51 @@ import org.junit.Test;
 import wlanTry.Channel;
 import wlanTry.DebugOutput;
 import wlanTry.DeviceControlNACK;
+import wlanTry.DeviceMapAP1;
 import wlanTry.DeviceResult;
+import wlanTry.Location;
 import wlanTry.PacketType;
 import wlanTry.Param;
 import wlanTry.Request;
 import wlanTry.RequestsQueue;
 
 public class DeviceTest {
-	ArrayList<Integer> neighbor0;
-	ArrayList<Integer> neighbor1;
-	ArrayList<Integer> neighbor2;
+	ArrayList<Location> map;
+	DeviceMapAP1 dm;
 	RequestsQueue req1,req2,req0;
 	private void neighborInit(){
-		neighbor0=new ArrayList<Integer>();
-		neighbor0.add(0);
-		neighbor0.add(1);
-		neighbor2=new ArrayList<Integer>();
-		neighbor2.add(1);
-		neighbor2.add(2);
-		neighbor1=new ArrayList<Integer>();
-		neighbor1.add(0);
-		neighbor1.add(1);
-		neighbor1.add(2);
+		dm=new DeviceMapAP1(2);
+		map=new ArrayList<Location>();
+		map.add(new Location(0,0));
+		map.add(new Location(-30,0));
+		map.add(new Location(30,0));
+		dm.createMap(map);
 	}
 	private void requestsInit(){
 		req0=new RequestsQueue();
 		req1=new RequestsQueue();
 		req2=new RequestsQueue();
 		for (int i=0;i<100;i++){
-			req0.addRequest(new Request(1, 500*i+10, 1, PacketType.DATA, 10, 30));
-			req1.addRequest(new Request(0, 500*i+100, 2, PacketType.DATA, 10, 30));
-			req2.addRequest(new Request(1, 500*i+210, 3, PacketType.DATA, 10, 30));
+			req0.addRequest(new Request(1, 500*i+100, 2, PacketType.DATA, 10, 30));
+			req1.addRequest(new Request(0, 500*i+10, 1, PacketType.DATA, 10, 30));
+			req2.addRequest(new Request(0, 500*i+210, 3, PacketType.DATA, 10, 30));
 			//req1.addRequest(new Request(2, 310, 4, PacketType.DATA, 5, 30));
 		}
+		ArrayList<RequestsQueue> reqs=new ArrayList<RequestsQueue>();
+		reqs.add(req0);
+		reqs.add(req1);
+		reqs.add(req2);
+		dm.setRequest(reqs);
 	}
 	@Test
 	public void test() {
-		final Channel dataChannel=new Channel(3);
-		final Channel controlChannel=new Channel(3);
+		final Channel dataChannel=new Channel(4);
+		final Channel controlChannel=new Channel(4);
 		final DebugOutput debugChannel=new DebugOutput(Param.outputPath+"channel.txt");
-		CyclicBarrier cb=new CyclicBarrier(3,new Runnable(){
+
+		final Object key=new Object();
+		
+		CyclicBarrier cb=new CyclicBarrier(4,new Runnable(){
 			@Override
 			public void run() {
 				dataChannel.tic();
@@ -65,21 +70,25 @@ public class DeviceTest {
 				System.out.println(dataChannel.getTime());
 			}
 		});
-		Object key=new Object();
-		this.neighborInit();
-		this.requestsInit();
-		DeviceControlNACK d0=new DeviceControlNACK(0, -1, cb, key, dataChannel, controlChannel, neighbor0, req0);
-		DeviceControlNACK d1=new DeviceControlNACK(1, -1, cb, key, dataChannel, controlChannel, neighbor1, req1);
-		DeviceControlNACK d2=new DeviceControlNACK(2, -1, cb, key, dataChannel, controlChannel, neighbor2, req2);
+		//this.neighborInit();
+		//this.requestsInit();
+		dm=new DeviceMapAP1(3);
+		dm.createMap();
+		dm.createRequest(1/Param.packetRequestRates);
+		DeviceControlNACK d0=new DeviceControlNACK(0, -1, cb, key, dataChannel, controlChannel, dm);
+		DeviceControlNACK d1=new DeviceControlNACK(1, 0, cb, key, dataChannel, controlChannel, dm);
+		DeviceControlNACK d2=new DeviceControlNACK(2, 0, cb, key, dataChannel, controlChannel, dm);
+		DeviceControlNACK d3=new DeviceControlNACK(3, 0, cb, key, dataChannel, controlChannel, dm);
 		
 		ExecutorService es = Executors.newCachedThreadPool();
 		ArrayList<Future<DeviceResult>> results = new ArrayList<Future<DeviceResult>>();
 		results.add(es.submit(d0));
 		results.add(es.submit(d1));
 		results.add(es.submit(d2));
+		results.add(es.submit(d3));
 		
 		ArrayList<DeviceResult> results2=new ArrayList<DeviceResult>();
-		for (int i=0;i<3;i++){
+		for (int i=0;i<4;i++){
 			try {
 				results2.add(results.get(i).get());
 			} catch (InterruptedException | ExecutionException e) {
@@ -87,8 +96,8 @@ public class DeviceTest {
 				e.printStackTrace();
 			}
 		}
-		for (int i=0;i<3;i++){
-			System.out.println("MT"+i+": "+results2.get(i).getPacketRx()+" "+results2.get(i).getPacketTx()+" "+results2.get(i).getDelayTime());
+		for (int i=0;i<4;i++){
+			System.out.println("MT"+i+": "+results2.get(i).getThroughputRx()+" "+results2.get(i).getThroughputTx()+" "+results2.get(i).getDelayTime());
 		}
 	}
 

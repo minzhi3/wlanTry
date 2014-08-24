@@ -17,7 +17,7 @@ public class Main {
 	}
 	private static void singleEvaluation(){
 		int numAP=Param.numAP;
-		int numMT=Param.numMT;
+		int numMT=Param.maximumMT;
 		int RP=Param.simRepeat;
 		
 		GodResult sum=new GodResult();
@@ -26,7 +26,7 @@ public class Main {
 		
 		long begintime = System.nanoTime();
 		for (int i=0;i<RP;i++){
-			results.add(es.submit(new God(numMT*numAP,numAP)));
+			results.add(es.submit(new God(numMT,numAP)));
 		}
 		for (int i=0;i<RP;i++){
 			try {
@@ -37,19 +37,18 @@ public class Main {
 			}
 		}
 		es.shutdown();
-		sum.div((double)RP);
 		
 		long endtime = System.nanoTime();
 		double costTime = (endtime - begintime)/1e9;
 		DebugOutput.outputAlways(" Time:"+costTime);
 		
-		DebugOutput.outputAlways(sum.ThroughputTx/numAP+" "+sum.ThroughputRx/numAP+" "+sum.DelayTime+" ");
+		DebugOutput.outputAlways(sum.getThroughputRx()/numAP+" "+sum.getThroughputTx()/numAP+" "+sum.getDelayTime()+" ");
 		DebugOutput.outputAlways("Over");
 		
 	}
 	private static void multipleEvaluation(){
 		int numAP=Param.numAP;
-		int numMT=Param.numMT;
+		int numMT=Param.maximumMT;
 		int RP=Param.simRepeat;
 
 		GodResult sum[]=new GodResult[numMT];
@@ -85,8 +84,7 @@ public class Main {
 			DebugOutput.outputAlways("Num="+repeat+" Time:"+costTime);
 		}
 		for (int i=0;i<numMT;i++){
-			sum[i].div((double)RP);
-			DebugOutput.outputAlways(sum[i].ThroughputTx/numAP+" "+sum[i].ThroughputRx/numAP+" "+sum[i].DelayTime+" ");
+			DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
