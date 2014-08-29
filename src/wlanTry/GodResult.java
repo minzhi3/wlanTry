@@ -4,7 +4,7 @@ public class GodResult {
 	public double DelayTime;
 	public int countDelay;
 	private int numDevice;
-	double packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
+	int packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
 	public GodResult(){
 		this.DelayTime=0;
 		this.packetRx=0;

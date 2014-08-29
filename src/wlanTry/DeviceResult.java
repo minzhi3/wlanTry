@@ -24,11 +24,19 @@ public class DeviceResult {
 		" Tx "+(double)this.packetTx*12000.0/((double)time/1000000.0)/1000000.0+
 		", Rx "+(double)this.packetRx*12000.0/((double)time/1000000.0)/1000000.0
 		);*/
-		return (double)this.packetTx*Param.sizeData/((double)timeLength);
+		if (Param.deviceType!=DeviceType.CSMA){
+			return (double)this.packetTx/Param.numSubpacket*Param.sizeData/((double)timeLength);
+		}else{
+			return (double)this.packetTx*Param.sizeData/((double)timeLength);
+		}
 	}
 
 	public double getThroughputRx(){
-		return (double)this.packetRx*Param.sizeData/((double)timeLength);
+		if (Param.deviceType!=DeviceType.CSMA){
+			return (double)this.packetRx/Param.numSubpacket*Param.sizeData/((double)timeLength);
+		}else{
+			return (double)this.packetRx*Param.sizeData/((double)timeLength);
+		}
 	}
 	public double getPacketRxFails(){
 		return this.packetRxFails;

@@ -54,7 +54,8 @@ abstract class Device implements Callable<DeviceResult> {
 				debugOutput.output(dataChannel.getTime()+": ");
 				synchronized(key){
 					dataSignals=this.dataChannel.checkSignalOver(this.id);
-					controlSignals=this.controlChannel.checkSignalOver(id);
+					if (controlChannel!=null) 
+						controlSignals=this.controlChannel.checkSignalOver(id);
 				}
 				
 				this.receiveProcess();

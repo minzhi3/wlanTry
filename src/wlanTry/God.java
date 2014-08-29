@@ -54,7 +54,7 @@ public class God implements Callable<GodResult>{
 				debugChannel.output(dataChannel.getTime()+":\t"+dataChannel.ToString());
 				debugChannel.output("CH:\t"+controlChannel.ToString());
 				debugChannel.output("\n");
-				System.out.println(dataChannel.getTime());
+				if (dataChannel.getTime()%10000==0) System.out.println(dataChannel.getTime());
 			}
 		});
 		
@@ -87,6 +87,9 @@ public class God implements Callable<GodResult>{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+		for (int i=0;i<ThreadNum;i++){
+			System.out.println("MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
 		}
 		es.shutdown();
 		//DebugOutput.outputAlways("GOD "+APNum);
