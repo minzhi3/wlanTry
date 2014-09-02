@@ -81,7 +81,7 @@ public class Main {
 
 			long endtime = System.nanoTime();
 			double costTime = (endtime - begintime)/1e9;
-			DebugOutput.outputAlways("Num="+repeat+" Time:"+costTime);
+			DebugOutput.outputAlways("RP="+repeat+" Time:"+costTime);
 		}
 		for (int i=0;i<numMT;i++){
 			DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");

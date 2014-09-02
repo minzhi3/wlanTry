@@ -1,65 +1,70 @@
 package wlanTry;
 
 public class GodResult {
-	public double DelayTime;
-	public int countDelay;
-	private int numDevice;
+	double sumDelay;
+	int countDelay;
+	private int numDevice,numGod;
 	int packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
 	public GodResult(){
-		this.DelayTime=0;
+		this.sumDelay=0;
 		this.packetRx=0;
 		this.packetRxFails=0;
 		this.packetTx=0;
 		this.packetTxFails=0;
+		this.countDelay=0;
+		this.numGod=0;
 	}
 	public void add(DeviceResult b){
 		this.numDevice++;
-		this.packetRx+=b.getPacketRx();
-		this.packetRxFails+=b.getPacketRxFails();
-		this.packetTx+=b.getPacketTx();
-		this.packetTxFails+=b.getPacketTxFails();
-		this.DelayTime+=b.getDelayTime();
-		this.countDelay++;
+		this.packetRx+=b.packetRx;
+		this.packetRxFails+=b.packetRxFails;
+		this.packetTx+=b.packetTx;
+		this.packetTxFails+=b.packetTxFails;
+		this.sumDelay+=b.sumDelay;
+		this.countDelay+=b.countDelay;
 	}
 	public void add(GodResult b){
-		this.numDevice+=b.getNum();
+		this.numGod+=1;
 		this.packetRx+=b.packetRx;
 		this.packetRxFails+=b.packetRxFails;
 		this.packetTx+=b.packetTx;
 		this.packetTxFails+=b.packetTxFails;
 		this.countDelay+=b.countDelay;
-		this.DelayTime+=b.DelayTime;
+		this.sumDelay+=b.sumDelay;
+		this.countDelay+=b.countDelay;
 	}
 	public double getPacketRx(){
-		return (double)this.packetRx/this.numDevice;
+		return (double)this.packetRx/this.numGod;
 	}
 	public double getPacketTx(){
-		return (double)this.packetTx/this.numDevice;
+		return (double)this.packetTx/this.numGod;
 	}
 	public double getPacketRxFails(){
-		return (double)this.packetRxFails/this.numDevice;
+		return (double)this.packetRxFails/this.numGod;
 	}
 	public double getPacketTxFails(){
-		return (double)this.packetTxFails/this.numDevice;
+		return (double)this.packetTxFails/this.numGod;
 	}
 	public double getDelayTime(){
-		return (double)this.DelayTime/this.countDelay;
+		return (double)this.sumDelay/this.countDelay;
 	}
 	public int getNum(){
 		return numDevice;
 	}
 	public double getThroughputTx(){
+		double throughputTx=(double)this.packetTx*Param.sizeData/Param.simTimeLength/numGod;
 		if (Param.deviceType!=DeviceType.CSMA){
-			return (double)this.packetTx/Param.numSubpacket*Param.sizeData/Param.simTimeLength;
+			return (double)throughputTx/Param.numSubpacket;
 		}else{
-			return (double)this.packetTx*Param.sizeData/Param.simTimeLength;
+			return (double)throughputTx;
 		}
 	}
 	public double getThroughputRx(){
+		double throughputRx=(double)this.packetRx*Param.sizeData/Param.simTimeLength/numGod;
 		if (Param.deviceType!=DeviceType.CSMA){
-			return (double)this.packetRx/Param.numSubpacket*Param.sizeData/Param.simTimeLength;
+			return (double)throughputRx/Param.numSubpacket;
 		}else{
-			return (double)this.packetRx*Param.sizeData/Param.simTimeLength;
+			return (double)throughputRx;
 		}
 	}
 }

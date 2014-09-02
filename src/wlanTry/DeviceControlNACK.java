@@ -24,7 +24,11 @@ public class DeviceControlNACK extends Device {
 			Channel ch, Channel controlChannel, DeviceMap dm) {
 		super(id, AP, barrier, key, ch, controlChannel, dm);
 		this.replyRequests=new RequestsQueue();
-		this.IDSlot=id%(dm.numMT);
+		if (dm.numMT>0) 
+			this.IDSlot=id%(dm.numMT);
+		else {
+			this.IDSlot=0;
+		}
 	}
 	
 

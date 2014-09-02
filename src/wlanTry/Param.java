@@ -3,11 +3,11 @@ package wlanTry;
 public class Param {
 	public static final String outputPath = "C:\\Users\\Huang\\mt\\";
 	public static final boolean withDownlink = false;
-	public static final int simTimeLength=1000000;
-	public static final int numAP=1;
-	public static final int maximumMT=3;
+	public static final int simTimeLength=300000;
+	public static final int numAP=4;
+	public static final int maximumMT=4;
 	public static final int simRepeat=1;
-	public static final boolean isControlChannel = true;
+	//public static final boolean isControlChannel = true;
 	public static final DeviceType deviceType = DeviceType.ControlChannelNACK;
 	public static final boolean isDebug = true;
 	

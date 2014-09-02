@@ -60,13 +60,15 @@ abstract class DeviceMap {
 			if (Param.withDownlink){
 				RequestsQueue rqs=new RequestsQueue();
 				//each receiver
-				for (int i=Param.numAP*numMT+Param.numAP;i<(Param.numAP+1)*numMT+Param.numAP;i++){
-					double time=0;
-					ExpRandom r=new ExpRandom(pps);
-					while (time<Param.simTimeLength){
-						time=r.nextSum();
-						rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, Param.numSubpacket, Param.timeSubpacket));
-					};
+				for (int i=Param.numAP;i<(numMT+1)*Param.numAP;i++){
+					if (this.getAPofIndex(i)==ap){
+						double time=0;
+						ExpRandom r=new ExpRandom(pps);
+						while (time<Param.simTimeLength){
+							time=r.nextSum();
+							rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, Param.numSubpacket, Param.timeSubpacket));
+						};
+					}
 				}
 				rqs.sort();
 				requestsList.add(rqs);
@@ -75,13 +77,13 @@ abstract class DeviceMap {
 			}
 		}
 		//Uplink
-		for (int i=Param.numAP;i<(numMT+1)*numMT;i++){// for MT
+		for (int i=Param.numAP;i<(numMT+1)*Param.numAP;i++){// for MT
 			RequestsQueue rqs=new RequestsQueue();
 			double time=0;
 			ExpRandom r=new ExpRandom(pps);
 			while (time<Param.simTimeLength){
 				time=r.nextSum();
-				rqs.addRequest(new Request((i-Param.numAP)/numMT,time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
+				rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
 			}
 			requestsList.add(rqs);
 		}
