@@ -11,7 +11,7 @@ import signal.Signal;
  * The base class of device.
  *
  */
-abstract class Device implements Callable<DeviceResult> {
+public abstract class Device implements Callable<DeviceResult> {
 	protected Channel dataChannel;  //shared by all devices
 	protected Channel controlChannel;
 	final int id;

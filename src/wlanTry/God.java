@@ -63,7 +63,7 @@ public class God implements Callable<GodResult>{
 		for (int i=0;i<ThreadNum;i++){//Add devices
 			switch (Param.deviceType){
 			case CSMA:
-				//devices[i]=new DeviceCSMA(i,cb,key,channel,dm.getNeighbour(i),dm.getRequests(i));
+				devices[i]=new DeviceCSMA(i,dm.getAPofIndex(i),cb,key,dataChannel,dm);
 				break;
 			case ControlChannelNACK:
 				devices[i]=new DeviceControlNACK(i,dm.getAPofIndex(i), cb,key, dataChannel, controlChannel, dm);

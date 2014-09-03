@@ -12,16 +12,7 @@ import java.util.concurrent.Future;
 
 import org.junit.Test;
 
-import wlanTry.Channel;
-import wlanTry.DebugOutput;
-import wlanTry.DeviceControlNACK;
-import wlanTry.DeviceMapAP1;
-import wlanTry.DeviceResult;
-import wlanTry.Location;
-import wlanTry.PacketType;
-import wlanTry.Param;
-import wlanTry.Request;
-import wlanTry.RequestsQueue;
+import wlanTry.*;
 
 public class DeviceTest {
 	ArrayList<Location> map;
@@ -75,10 +66,23 @@ public class DeviceTest {
 		dm=new DeviceMapAP1(3);
 		dm.createMap();
 		dm.createRequest(1/Param.packetRequestRates);
-		DeviceControlNACK d0=new DeviceControlNACK(0, -1, cb, key, dataChannel, controlChannel, dm);
-		DeviceControlNACK d1=new DeviceControlNACK(1, 0, cb, key, dataChannel, controlChannel, dm);
-		DeviceControlNACK d2=new DeviceControlNACK(2, 0, cb, key, dataChannel, controlChannel, dm);
-		DeviceControlNACK d3=new DeviceControlNACK(3, 0, cb, key, dataChannel, controlChannel, dm);
+		Device d0 = null,d1=null,d2=null,d3=null;
+		switch (Param.deviceType){
+		case ControlChannelNACK:
+			d0=new DeviceControlNACK(0, -1, cb, key, dataChannel, controlChannel, dm);
+			d1=new DeviceControlNACK(1, 0, cb, key, dataChannel, controlChannel, dm);
+			d2=new DeviceControlNACK(2, 0, cb, key, dataChannel, controlChannel, dm);
+			d3=new DeviceControlNACK(3, 0, cb, key, dataChannel, controlChannel, dm);
+			break;
+		case CSMA:
+			d0=new DeviceCSMA(0, -1, cb, key, dataChannel, dm);
+			d1=new DeviceCSMA(1, 0, cb, key, dataChannel, dm);
+			d2=new DeviceCSMA(2, 0, cb, key, dataChannel, dm);
+			d3=new DeviceCSMA(3, 0, cb, key, dataChannel, dm);
+			break;
+		default:
+			break;
+		}
 		
 		ExecutorService es = Executors.newCachedThreadPool();
 		ArrayList<Future<DeviceResult>> results = new ArrayList<Future<DeviceResult>>();

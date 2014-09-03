@@ -3,7 +3,7 @@ package wlanTry;
 public class Param {
 	public static final String outputPath = "C:\\Users\\Huang\\mt\\";
 	public static final boolean withDownlink = false;
-	public static final int simTimeLength=300000;
+	public static final int simTimeLength=500000;
 	public static final int numAP=4;
 	public static final int maximumMT=4;
 	public static final int simRepeat=1;

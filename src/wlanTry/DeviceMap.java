@@ -66,7 +66,12 @@ abstract class DeviceMap {
 						ExpRandom r=new ExpRandom(pps);
 						while (time<Param.simTimeLength){
 							time=r.nextSum();
-							rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, Param.numSubpacket, Param.timeSubpacket));
+							if (Param.deviceType==DeviceType.CSMA){
+								rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, 1, Param.timeData));
+							}else{
+								rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, Param.numSubpacket, Param.timeSubpacket));
+							}
+							
 						};
 					}
 				}
@@ -83,7 +88,11 @@ abstract class DeviceMap {
 			ExpRandom r=new ExpRandom(pps);
 			while (time<Param.simTimeLength){
 				time=r.nextSum();
-				rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
+				if (Param.deviceType==DeviceType.CSMA){
+					rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, 1,Param.timeData));
+				}else{
+					rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
+				}
 			}
 			requestsList.add(rqs);
 		}
