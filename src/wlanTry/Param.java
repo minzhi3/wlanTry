@@ -2,14 +2,15 @@ package wlanTry;
 
 public class Param {
 	public static final String outputPath = "C:\\Users\\Huang\\mt\\";
-	public static final boolean withDownlink = false;
-	public static final int simTimeLength=500000;
+	public static final boolean withDownlink = true;
+	public static final int simTimeLength=300000;
 	public static final int numAP=4;
-	public static final int maximumMT=4;
+	public static final int maximumMT=20;
 	public static final int simRepeat=1;
 	//public static final boolean isControlChannel = true;
-	public static final DeviceType deviceType = DeviceType.ControlChannelNACK;
+	public static final DeviceType deviceType = DeviceType.CSMA;
 	public static final boolean isDebug = true;
+	public static final boolean allMT = true;
 	
 	public static final double throughputRequest=3 + (withDownlink?0:3);  //Mbps
 	public static final int timeSIFS=10;

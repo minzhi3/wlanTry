@@ -31,7 +31,6 @@ public class GodResult {
 		this.packetTxFails+=b.packetTxFails;
 		this.countDelay+=b.countDelay;
 		this.sumDelay+=b.sumDelay;
-		this.countDelay+=b.countDelay;
 	}
 	public double getPacketRx(){
 		return (double)this.packetRx/this.numGod;

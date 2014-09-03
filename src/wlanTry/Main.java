@@ -62,7 +62,7 @@ public class Main {
 			long begintime = System.nanoTime();
 
 			
-			for (int i=0;i<numMT*numAP;i+=numAP){
+			for (int i=0;i<numMT;i++){
 				results.add(es.submit(new God(i,numAP)));
 			}
 			

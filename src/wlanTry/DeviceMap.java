@@ -104,6 +104,9 @@ abstract class DeviceMap {
 	public void createMap(ArrayList<Location> pos){
 		this.devices=pos;
 	}
+	public boolean inCenter(int id){
+		return Param.allMT||(Math.abs(devices.get(id).x)<Param.distAP/2) && (Math.abs(devices.get(id).y)<Param.distAP/2);
+	}
 	public abstract void createMap();
 	public abstract int getAPofIndex(int index);
 	protected abstract boolean inAreaAP(double x,double y);

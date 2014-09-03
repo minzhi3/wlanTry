@@ -16,7 +16,6 @@ public class DeviceCSMA extends Device {
 	int countReply;
 	int sizeCW;
 	RequestsQueue replyRequests;
-	boolean carrierSense;
 
 	public DeviceCSMA(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, DeviceMap dm) {
@@ -27,7 +26,7 @@ public class DeviceCSMA extends Device {
 
 	@Override
 	protected void receiveProcess() {
-		carrierSense=(dataChannel.getSignal(id)!=null);
+		
 		if (!dataSignals.isEmpty()){
 			Signal receivedSignal=dataSignals.get(0);
 			debugOutput.output(receivedSignal.getString()+" Received");
@@ -57,7 +56,7 @@ public class DeviceCSMA extends Device {
 							ret.receiveACK();
 							this.sizeCW=Param.sizeCWmin;
 							this.stateTransmit=0;
-							ret.transmittingEnds(dataChannel.getTime());
+							ret.transmittingEnds((int)(this.requests.getTranmitTime()),dataChannel.getTime());
 							this.requests.popSubpacket();
 						}else{
 							debugOutput.output(" --Error ACK");
@@ -94,7 +93,6 @@ public class DeviceCSMA extends Device {
 		switch (stateTransmit){
 		case 0://Initial
 			debugOutput.output("Transmitting Starts");
-			ret.transmittingStart(dataChannel.getTime());
 			stateTransmit=1;
 			countIFS=Param.timeDIFS;
 			break;

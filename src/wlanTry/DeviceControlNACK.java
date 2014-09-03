@@ -18,7 +18,6 @@ public class DeviceControlNACK extends Device {
 	int countTransmit;
 	int countReply;
 	int sizeCW;
-	boolean carrierSense;
 	
 	public DeviceControlNACK(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, Channel controlChannel, DeviceMap dm) {
@@ -37,8 +36,6 @@ public class DeviceControlNACK extends Device {
 		//receivedSignal=dataChannel.getSignal(id);
 		//receivedControlSignal=controlChannel.getSignal(id);
 
-		carrierSense=(dataChannel.getSignal(id)!=null);
-		
 		if (!dataSignals.isEmpty()){
 			Signal receivedSignal=dataSignals.get(0);
 			debugOutput.output(receivedSignal.getString()+" Received");
@@ -88,8 +85,14 @@ public class DeviceControlNACK extends Device {
 						stateTransmit=0;
 					
 					ret.receiveACK();
-					boolean wholePacket=requests.popSubpacket();
-					if (wholePacket) ret.transmittingEnds(dataChannel.getTime()); 
+					int beginTime=(int)(this.requests.getTranmitTime());
+					boolean wholePacket;
+					synchronized(key){
+						wholePacket=requests.popSubpacket();
+					}
+					if (wholePacket) {
+						ret.transmittingEnds(beginTime,dataChannel.getTime());
+					}
 				}
 				break;
 			case NACK://Any NACK except from itself can stop transmitting
@@ -138,7 +141,6 @@ public class DeviceControlNACK extends Device {
 		case 0://Initial
 
 			debugOutput.output("Transmitting Starts");
-			if (requests.getFirst().numSub==10) ret.transmittingStart(dataChannel.getTime());
 			stateTransmit=1;
 			countIFS=Param.timeDIFS;
 			sizeCW=Param.sizeCWmin;

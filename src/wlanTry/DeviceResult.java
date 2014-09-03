@@ -66,15 +66,13 @@ public class DeviceResult {
 	public void receiveDATA(){
 		packetRx++;
 	}
-	public void transmittingStart(int time){
-		timeBegin=time;
-	}
+
 	public void retransmit(){
 	}
 	public void reply(PacketType type){
 	}
-	public void transmittingEnds(int time) {
-		int delayTime=time-timeBegin;
+	public void transmittingEnds(int timeBegin, int timeEnd) {
+		int delayTime=timeEnd-timeBegin;
 		countDelay++;
 		sumDelay+=delayTime;
 	}

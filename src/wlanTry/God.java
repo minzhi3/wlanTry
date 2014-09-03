@@ -81,16 +81,20 @@ public class God implements Callable<GodResult>{
 		GodResult gr=new GodResult();
 		
 		for (int i=Param.numAP;i<ThreadNum;i++){
-			try {
-				gr.add(results.get(i).get());
-			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			if (dm.inCenter(i)){
+				try {
+					gr.add(results.get(i).get());
+				} catch (ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 		if (Param.isDebug){
 			for (int i=0;i<ThreadNum;i++){
-				System.out.println("MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
+				if (dm.inCenter(i)){
+					System.out.println("MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
+				}
 			}
 		}
 		es.shutdown();

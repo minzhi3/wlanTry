@@ -30,6 +30,7 @@ public abstract class Device implements Callable<DeviceResult> {
 	//Signal receivedSignal;
 	DeviceResult ret;
 	DebugOutput debugOutput = null;
+	boolean carrierSense;
 
 
 	public Device(int id,int AP,CyclicBarrier barrier,Object key,Channel ch, Channel controlChannel, DeviceMap dm) {
@@ -56,6 +57,7 @@ public abstract class Device implements Callable<DeviceResult> {
 					dataSignals=this.dataChannel.checkSignalOver(this.id);
 					if (controlChannel!=null) 
 						controlSignals=this.controlChannel.checkSignalOver(id);
+					carrierSense=(dataChannel.getSignal(id)!=null);
 				}
 				
 				this.receiveProcess();
