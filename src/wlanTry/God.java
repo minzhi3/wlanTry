@@ -51,9 +51,16 @@ public class God implements Callable<GodResult>{
 			public void run() {
 				dataChannel.tic();
 				controlChannel.tic();
-				debugChannel.output(dataChannel.getTime()+":\t"+dataChannel.ToString());
-				debugChannel.output("CH:\t"+controlChannel.ToString());
-				debugChannel.output("\n");
+				int time=dataChannel.getTime();
+				debugChannel.outputInit(time);
+				if (time%5!=0) return;
+				String channelString=dataChannel.ToString();
+				String controlString=controlChannel.ToString();
+				if (channelString!=null)
+					debugChannel.output(channelString);
+				if (controlString!=null)
+					debugChannel.output(controlString);
+				debugChannel.outputToFile();
 				//if (dataChannel.getTime()%10000==0) System.out.println(dataChannel.getTime());
 			}
 		});
@@ -92,9 +99,7 @@ public class God implements Callable<GodResult>{
 		}
 		if (Param.isDebug){
 			for (int i=0;i<ThreadNum;i++){
-				if (dm.inCenter(i)){
-					System.out.println("MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
-				}
+				System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
 			}
 		}
 		es.shutdown();

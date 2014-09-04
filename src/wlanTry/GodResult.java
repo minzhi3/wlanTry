@@ -24,6 +24,7 @@ public class GodResult {
 		this.countDelay+=b.countDelay;
 	}
 	public void add(GodResult b){
+		this.numDevice+=b.numDevice;
 		this.numGod+=1;
 		this.packetRx+=b.packetRx;
 		this.packetRxFails+=b.packetRxFails;

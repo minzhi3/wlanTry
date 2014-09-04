@@ -60,6 +60,8 @@ public class DeviceCSMA extends Device {
 							this.requests.popSubpacket();
 						}else{
 							debugOutput.output(" --Error ACK");
+							//this.stateTransmit=0;
+							//this.requests.popSubpacket();
 						}
 						break;
 				default:

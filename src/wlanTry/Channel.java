@@ -142,11 +142,13 @@ public class Channel {
 		return ret;
 	}
 	public String ToString(){
+		boolean hasSignal=false;
 		StringBuilder sb=new StringBuilder();
 		for (LinkedList<Signal> signals:chArray){
 			if (signals.isEmpty())
 				sb.append("-----");
 			else {
+				hasSignal=true;
 				ListIterator<Signal> li=signals.listIterator();
 				Signal s;
 				while (li.hasNext())
@@ -161,6 +163,10 @@ public class Channel {
 			}
 			sb.append("\t");
 		}
-		return sb.toString();
+		if (hasSignal) 
+			return sb.toString();
+		else {
+			return null;
+		}
 	}
 }

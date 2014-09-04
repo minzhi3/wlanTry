@@ -8,10 +8,14 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.util.ArrayList;
 
+import javax.print.attribute.standard.MediaSize.Other;
+
 public class DebugOutput {
 	FileOutputStream fos;
 	OutputStreamWriter osw;
 	BufferedWriter bw;
+	StringBuilder sb;
+	Integer outputTime;
 	public DebugOutput(String s){
 		if (isDebug){
 			try {
@@ -22,6 +26,7 @@ public class DebugOutput {
 			}
 			this.osw=new OutputStreamWriter(fos);
 			this.bw=new BufferedWriter(this.osw);
+			sb=new StringBuilder();
 		}
 	}
 	public void close(){
@@ -36,14 +41,25 @@ public class DebugOutput {
 	}
 	public int time=0;
 	public static final boolean isDebug=Param.isDebug;
-	public void output(String s){
-		if (isDebug){
+	public void outputToFile(){
+		if (isDebug && sb.length()>0){
 			try {
-				bw.write(s);
+				bw.write(outputTime.toString()+": ");
+				sb.append('\n');
+				bw.write(sb.toString());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			sb=new StringBuilder();
+		}
+	}
+	public void outputInit(int time){
+		outputTime=time;
+	}
+	public void output(String s){
+		if (isDebug){
+			sb.append(s);
 		}
 	}
 	

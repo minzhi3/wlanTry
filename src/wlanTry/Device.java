@@ -52,7 +52,7 @@ public abstract class Device implements Callable<DeviceResult> {
 		
 		try {
 			while (this.dataChannel.getTime()<timeLength){
-				debugOutput.output(dataChannel.getTime()+": ");
+				debugOutput.outputInit(dataChannel.getTime());
 				synchronized(key){
 					dataSignals=this.dataChannel.checkSignalOver(this.id);
 					if (controlChannel!=null) 
@@ -69,8 +69,7 @@ public abstract class Device implements Callable<DeviceResult> {
 					this.transmitProcess();
 				}
 				barrier.await();
-
-				debugOutput.output("\n");
+				debugOutput.outputToFile();
 			}
 		} catch (Exception e) {
 			debugOutput.close();

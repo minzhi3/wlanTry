@@ -19,13 +19,20 @@ public class DeviceMapAP4 extends DeviceMap {
 			super.addDevice(size, -size);
 		//}
 		for (int i=0;i<numMT*4;i++){
-			double x;
-			double y;
-			do{
-				x=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
-				y=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
-			}while (!this.inAreaAP(x, y));
-			this.addDevice(x, y);
+			if (numMT!=3){
+				double x;
+				double y;
+				do{
+					x=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
+					y=(r.nextDouble()-0.5)*(this.areaAP*2+this.distAP);
+				}while (!this.inAreaAP(x, y));
+				this.addDevice(x, y);
+			}else {//Case for hidden nodes
+				if (i/3==0) this.addDevice(30, 30);
+				if (i/3==1) this.addDevice(-30, 30);
+				if (i/3==2) this.addDevice(1, -1);
+				if (i/3==3) this.addDevice(-30, -30);
+			}
 		}
 	}
 	

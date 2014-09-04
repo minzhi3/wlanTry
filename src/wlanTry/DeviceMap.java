@@ -83,18 +83,22 @@ abstract class DeviceMap {
 		}
 		//Uplink
 		for (int i=Param.numAP;i<(numMT+1)*Param.numAP;i++){// for MT
-			RequestsQueue rqs=new RequestsQueue();
-			double time=0;
-			ExpRandom r=new ExpRandom(pps);
-			while (time<Param.simTimeLength){
-				time=r.nextSum();
-				if (Param.deviceType==DeviceType.CSMA){
-					rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, 1,Param.timeData));
-				}else{
-					rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
+			if (Param.withUplink){
+				RequestsQueue rqs=new RequestsQueue();
+				double time=0;
+				ExpRandom r=new ExpRandom(pps);
+				while (time<Param.simTimeLength){
+					time=r.nextSum();
+					if (Param.deviceType==DeviceType.CSMA){
+						rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, 1,Param.timeData));
+					}else{
+						rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, Param.numSubpacket,Param.timeSubpacket));
+					}
 				}
+				requestsList.add(rqs);
+			}else{
+				requestsList.add(new RequestsQueue());
 			}
-			requestsList.add(rqs);
 		}
 	}
 	/**

@@ -42,7 +42,7 @@ public class Main {
 		double costTime = (endtime - begintime)/1e9;
 		DebugOutput.outputAlways(" Time:"+costTime);
 		
-		DebugOutput.outputAlways(sum.getThroughputRx()/numAP+" "+sum.getThroughputTx()/numAP+" "+sum.getDelayTime()+" ");
+		DebugOutput.outputAlways(sum.getThroughputRx()/numAP+" "+sum.getThroughputTx()/numAP+" "+sum.getDelayTime()+" MT:"+sum.getNum());
 		DebugOutput.outputAlways("Over");
 		
 	}
