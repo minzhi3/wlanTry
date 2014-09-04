@@ -8,14 +8,11 @@ import signal.Signal;
 
 public class DeviceCSMA extends Device {
 
-	int stateTransmit;
-	int stateReply;
 	int countIFS;
 	int countBackoff;
 	int countTransmit;
 	int countReply;
 	int sizeCW;
-	RequestsQueue replyRequests;
 
 	public DeviceCSMA(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, DeviceMap dm) {
@@ -70,23 +67,6 @@ public class DeviceCSMA extends Device {
 			}
 		}
 		
-	}
-
-	@Override
-	protected boolean checkReply() {
-		if (stateReply>0)
-			return true;
-		else {
-			return replyRequests.getTranmitTime()<dataChannel.currentTime;
-		}
-	}
-
-	@Override
-	protected boolean checkTransmit() {
-		if (stateTransmit>0)
-			return true;
-		else
-			return super.requests.getTranmitTime()<dataChannel.currentTime;
 	}
 
 	@Override

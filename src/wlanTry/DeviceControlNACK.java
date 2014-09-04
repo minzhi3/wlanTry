@@ -7,12 +7,8 @@ import java.util.concurrent.CyclicBarrier;
 import signal.Signal;
 
 public class DeviceControlNACK extends Device {
-	RequestsQueue replyRequests;
-	//Signal receivedControlSignal;
 	
 	final int IDSlot;
-	int stateTransmit;
-	int stateReply;
 	int countIFS;
 	int countBackoff;
 	int countTransmit;
@@ -22,7 +18,6 @@ public class DeviceControlNACK extends Device {
 	public DeviceControlNACK(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, Channel controlChannel, DeviceMap dm) {
 		super(id, AP, barrier, key, ch, controlChannel, dm);
-		this.replyRequests=new RequestsQueue();
 		if (dm.numMT>0) 
 			this.IDSlot=id%(dm.numMT);
 		else {
@@ -115,23 +110,6 @@ public class DeviceControlNACK extends Device {
 			}
 			debugOutput.output("|");
 		}
-	}
-
-	@Override
-	protected boolean checkReply() {
-		if (stateReply>0)
-			return true;
-		else {
-			return replyRequests.getTranmitTime()<dataChannel.currentTime;
-		}
-	}
-
-	@Override
-	protected boolean checkTransmit() {
-		if (stateTransmit>0)
-			return true;
-		else
-			return super.requests.getTranmitTime()<dataChannel.currentTime;
 	}
 
 	@Override

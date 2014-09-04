@@ -21,6 +21,11 @@ public abstract class Device implements Callable<DeviceResult> {
 	final Object key;  //key for synchronize
 	final ArrayList<Integer> neighbor;  //neighbor
 	final DeviceMap dMap;
+
+	protected int stateTransmit;
+	protected int stateReply;
+
+	RequestsQueue replyRequests;
 	RequestsQueue requests;  //The time of sending data
 	//DebugOutput debugChannel;
 	
@@ -43,6 +48,7 @@ public abstract class Device implements Callable<DeviceResult> {
 		this.dMap=dm;
 		this.neighbor=dMap.getNeighbour(id);
 		this.requests=dMap.getRequests(id);
+		this.replyRequests=new RequestsQueue();
     } 
 	
 	@Override
@@ -79,10 +85,21 @@ public abstract class Device implements Callable<DeviceResult> {
 		debugOutput.close();
 		return this.ret;
 	}
+	private boolean checkReply(){
+		if (stateReply>0)
+			return true;
+		else {
+			return replyRequests.getTranmitTime()<dataChannel.currentTime;
+		}
+	}
+	private boolean checkTransmit() {
+		if (stateTransmit>0)
+			return true;
+		else
+			return requests.getTranmitTime()<dataChannel.currentTime;
+	}
 	
-	protected abstract void receiveProcess();
-	protected abstract boolean checkReply();
-	protected abstract boolean checkTransmit();
+	protected abstract void receiveProcess() throws Exception;
 	protected abstract void transmitProcess();
 	protected abstract void replyProcess();
 }
