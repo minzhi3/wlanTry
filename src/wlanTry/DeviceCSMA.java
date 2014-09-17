@@ -32,7 +32,7 @@ public class DeviceCSMA extends Device {
 				debugOutput.output(" --ID OK");
 				switch (receivedSignal.type){
 					case DATA:  //Reply the ACK signal
-						if (!receivedSignal.error){
+						if (!receivedSignal.getErrorState()){
 							debugOutput.output(" --Available DATA --Reply ACK");
 							ret.receiveDATA();
 							replyRequests.addRequest(new Request(
@@ -48,7 +48,7 @@ public class DeviceCSMA extends Device {
 						}
 						break;
 					case ACK:  //Received ACK
-						if (!receivedSignal.error){
+						if (!receivedSignal.getErrorState()){
 							debugOutput.output(" --Available ACK");
 							ret.receiveACK();
 							this.sizeCW=Param.sizeCWmin;

@@ -2,7 +2,7 @@ package wlanTry;
 
 import signal.Signal;
 
-public class Request{
+public class Request implements Cloneable{
 	public double time;
 	public int IDTo;
 	public int numSub;
@@ -26,8 +26,25 @@ public class Request{
 		this.type=type;
 		this.length=length;
 	}
+	public Request getClone(){
+		try {
+			return (Request)(this.clone());
+		} catch (CloneNotSupportedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
 	public Signal toSignal(int IDFrom, int begin){
 		return new Signal(IDFrom, IDTo, IDPacket, type, numSub, begin, length);
+	}
+	public int getLength(){
+		return this.numSub*this.length;
+	}
+	@Override
+	protected Object clone() throws CloneNotSupportedException{
+		return super.clone();
+		
 	}
 }
 

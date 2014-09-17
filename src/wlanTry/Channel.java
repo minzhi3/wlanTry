@@ -81,8 +81,8 @@ public class Channel {
 		while (li.hasNext()){
 			Signal s=li.next();
 			if (s.getEndTime()<=this.currentTime){
-				ret.add(s);
-				if (s.numSubpacket<=1)
+				ret.add(s.getClone());
+				if (s.getSub()<=1)
 					li.remove();
 				else {
 					s.removeSubpacket();
@@ -157,7 +157,7 @@ public class Channel {
 					sb.append(s.type);
 					sb.append(s.IDPacket);
 					sb.append('-');
-					sb.append(s.numSubpacket);
+					sb.append(s.getSub());
 					sb.append('/');
 				}
 			}

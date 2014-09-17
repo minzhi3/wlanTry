@@ -37,7 +37,7 @@ public class DeviceControlRTS extends Device {
 				debugOutput.output(" --ID OK");
 				switch (receivedSignal.type){
 					case DATA:  //Reply the NACK when error happenl
-						if (receivedSignal.error){
+						if (receivedSignal.getErrorState()){
 							ret.receiveError();
 							debugOutput.output(" --Error Detected --Reply NACK");
 							replyRequests.addRequest(new Request(
@@ -89,9 +89,6 @@ public class DeviceControlRTS extends Device {
 					synchronized(key){
 						wholePacket=requests.popSubpacket();
 					}
-					if (wholePacket) {
-						ret.transmittingEnds(beginTime,dataChannel.getTime());
-					}
 				}
 				break;
 			case NACK://A NACK stops transmitting
@@ -110,23 +107,21 @@ public class DeviceControlRTS extends Device {
 				break;
 			case RTS://Reply CTS when received RTS
 				if (receivedControlSignal.IDFrom==id) break;
-				if (receivedControlSignal.IDTo!=id){
-					countRTS++;
-				}else{
+				countRTS++;
+				if (receivedControlSignal.IDTo==id){
 					replyRequests.addRequest(new Request(
-							receivedControlSignal.IDFrom, 
-							dataChannel.currentTime, 
-							receivedControlSignal.IDPacket, 
-							PacketType.CTS,
-							1,
-							Param.timeControlSlot-2));
+						receivedControlSignal.IDFrom, 
+						dataChannel.currentTime, 
+						receivedControlSignal.IDPacket, 
+						PacketType.CTS,
+						1,
+						Param.timeControlSlot-2));
 				}
 				break;
 			case CTS:
 				if (receivedControlSignal.IDFrom==id) break;
-				if (receivedControlSignal.IDTo!=id){
-					countCTS++;
-				}else{
+				countCTS++;
+				if (receivedControlSignal.IDTo==id){
 					stateTransmit=2;//finish waiting CTS
 				}
 				break;
@@ -139,11 +134,12 @@ public class DeviceControlRTS extends Device {
 				break;
 			case ENDR:
 				if (receivedControlSignal.IDFrom==id) break;
-				if (receivedControlSignal.IDTo!=id){
-					countCTS--;
-				}else{
+				countCTS--;
+				if (receivedControlSignal.IDTo==id){
 					stateTransmit=6;
+					ret.receiveACK();
 				}
+
 				if (countRTS<0) throw new Exception("CTS Less than zero");
 				break;
 			default:
@@ -155,25 +151,32 @@ public class DeviceControlRTS extends Device {
 	}
 	@Override
 	protected void transmitProcess() {
-		Request dataRequest =requests.getFirst();
+		Request dataRequest=null ;
+		try{
+		dataRequest =requests.getFirst().getClone();
+		}catch (Exception e){
+			e.printStackTrace();
+		}
 		switch (stateTransmit){
 		
 		case 0://Initial
 
 			debugOutput.output("Transmitting Starts");
-			stateTransmit=1;
-			countIFS=Param.timeDIFS;
+			stateTransmit=7;
 			sizeCW=Param.sizeCWmin;
-			
+			break;
+		case 7://RTS
 			Request rtsRequest=new Request(dataRequest.IDTo, dataChannel.getTime(), dataRequest.IDPacket, PacketType.RTS, 1, Param.timeControlSlot-2);
 			replyRequests.addRequest(rtsRequest);
 			stateTransmit=1;
 			break;
 		case 1://wait CTS
 			debugOutput.output(" --wait CTS, RTS="+countRTS);
+
+			countIFS=Param.timeSIFS;
 			break;
-		case 2://DIFS
-			debugOutput.output(" --DIFS "+countIFS);
+		case 2://SIFS
+			debugOutput.output(" --SIFS "+countIFS);
 			if (countIFS<=0){
 				stateTransmit=3;
 				if (countBackoff<=0)
@@ -192,7 +195,7 @@ public class DeviceControlRTS extends Device {
 			debugOutput.output(" --Backoff "+countBackoff);
 			if (countBackoff<=0){
 				stateTransmit=4;
-				countTransmit=requests.getFirst().length;
+				countTransmit=requests.getFirst().getLength();
 				synchronized(key){
 					dataChannel.addSignal(neighbor, id, requests.getFirst());
 				}
@@ -227,9 +230,15 @@ public class DeviceControlRTS extends Device {
 			}
 			break;
 		case 6://ENDS
-			Request endrRequest=new Request(dataRequest.IDTo, dataChannel.getTime(), dataRequest.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
-			replyRequests.addRequest(endrRequest);
+			Request endsRequest=new Request(dataRequest.IDTo, dataChannel.getTime(), dataRequest.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
+			replyRequests.addRequest(endsRequest);
 			stateTransmit=0;
+			
+			int beginTime=(int)(this.requests.getTranmitTime());
+			synchronized(key){
+				requests.popSubpacket();
+			}
+			ret.transmittingEnds(beginTime,dataChannel.getTime());
 			
 			break;
 		}

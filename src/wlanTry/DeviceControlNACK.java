@@ -32,14 +32,14 @@ public class DeviceControlNACK extends Device {
 		//receivedControlSignal=controlChannel.getSignal(id);
 
 		if (!dataSignals.isEmpty()){
-			Signal receivedSignal=dataSignals.get(0);
+			Signal receivedSignal=dataSignals.get(0).getClone();
 			debugOutput.output(receivedSignal.getString()+" Received");
 			//Receive for data channel
 			if (receivedSignal.IDTo==id){
 				debugOutput.output(" --ID OK");
 				switch (receivedSignal.type){
 					case DATA:  //Reply the ACK signal
-						if (receivedSignal.error){
+						if (receivedSignal.getErrorState()){
 							ret.receiveError();
 							debugOutput.output(" --Error Detected --Reply NACK");
 							replyRequests.addRequest(new Request(
@@ -70,7 +70,7 @@ public class DeviceControlNACK extends Device {
 		//receive for control channel
 
 		if (!controlSignals.isEmpty()){
-			Signal receivedControlSignal=controlSignals.get(0);
+			Signal receivedControlSignal=controlSignals.get(0).getClone();
 			debugOutput.output(receivedControlSignal.getString()+" Received");
 			switch (receivedControlSignal.type){
 			case ACK:
@@ -144,7 +144,7 @@ public class DeviceControlNACK extends Device {
 			debugOutput.output(" --Backoff "+countBackoff);
 			if (countBackoff<=0){
 				stateTransmit=3;
-				countTransmit=requests.getFirst().length;
+				countTransmit=requests.getFirst().getLength();
 				synchronized(key){
 					dataChannel.addSignal(neighbor, id, requests.getFirst());
 				}
