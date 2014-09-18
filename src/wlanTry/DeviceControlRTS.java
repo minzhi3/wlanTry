@@ -65,6 +65,8 @@ public class DeviceControlRTS extends Device {
 		boolean multiline=false;
 		receiveSignalQueue.sort(new SignalComparator());
 		
+		boolean rtschecked=false;
+		
 		for (Signal receivedSignal : receiveSignalQueue) {
 			if (multiline)debugOutput.output("\n     ");
 			multiline=true;
@@ -131,25 +133,23 @@ public class DeviceControlRTS extends Device {
 					if (receivedSignal.IDTo==id){
 						//sending=false;
 						ret.receiveNACK();
-						stateTransmit=4;
-						countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
-						debugOutput.output(" -- retransmit");
-						//Request endsRequest=new Request(receivedSignal.IDFrom, dataChannel.getTime(), receivedSignal.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
-						//replyRequests.addRequest(endsRequest);
+						stateTransmit=0;
+						//countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
+						//debugOutput.output(" -- retransmit");
+						Request endsRequest=new Request(receivedSignal.IDFrom, dataChannel.getTime(), receivedSignal.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
+						replyRequests.addRequest(endsRequest);
 						
 					}
 					//}
 					break;
 				case RTS://Reply CTS when received RTS
-						
 					if (receivedSignal.IDFrom==id){
 						delete.add(receivedSignal);
 						break;
 					}
-
 					if (receivedSignal.IDTo==id){
-						
-						if (!receiving){//If itself is not receiving
+						rtschecked=true;
+						if (!receiving){
 							delete.add(receivedSignal);
 							threshold=countRTS;
 							receiving=true;
@@ -161,11 +161,13 @@ public class DeviceControlRTS extends Device {
 								1,
 								Param.timeControlSlot-2));
 						}
-					}else{
+					}
+					if (receivedSignal.IDTo!=id){
+						if (!rtschecked){
 							delete.add(receivedSignal);
 							countRTS++;
-							rts.add(receivedSignal.IDFrom);
-							debugOutput.output(" --get RTS from "+receivedSignal.IDFrom+", RTS="+rts.getNum()+" CTS="+cts.getNum());
+							debugOutput.output(" --get RTS from "+receivedSignal.IDFrom+" RTS="+countRTS+" ENDS="+countENDS+" threshold="+threshold);
+						}
 					}
 					//else{
 						//debugOutput.output("--waiting current receiving");
@@ -190,7 +192,7 @@ public class DeviceControlRTS extends Device {
 					if (receivedSignal.IDTo!=id){
 						countENDS++;
 						rts.remove(receivedSignal.IDFrom);
-						debugOutput.output(" --get ENDS from "+receivedSignal.IDFrom+", RTS="+rts.getNum()+" CTS="+cts.getNum());
+						debugOutput.output(" --get ENDS from "+receivedSignal.IDFrom+" RTS="+countRTS+" ENDS="+countENDS+" threshold="+threshold);
 					}
 					if (rts.getNum()<0) throw new Exception("RTS Less than zero");
 					break;
@@ -199,12 +201,27 @@ public class DeviceControlRTS extends Device {
 					if (receivedSignal.IDFrom==id) break;
 
 					if (receivedSignal.IDTo==id){
-						stateTransmit=8;
+
+						Request endsRequest=new Request(receivedSignal.IDFrom, dataChannel.getTime(), receivedSignal.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
+						replyRequests.addRequest(endsRequest);
+						stateTransmit=0;
+						
+						if (dataRequest!=null){
+							int beginTime=(int)(this.dataRequest.time);
+	
+							debugOutput.output(" --remove request,next_ID="+requests.getFirst().IDPacket);
+							ret.transmittingEnds(beginTime,dataChannel.getTime());
+						}
 						ret.receiveACK();
+						synchronized(key){
+							requests.pop();
+						}
+						dataRequest=null;
 					}else {
 						countENDR++;
 						cts.remove(receivedSignal.IDFrom);
-						debugOutput.output(" --get ENDR from "+receivedSignal.IDFrom+", RTS="+rts.getNum()+" CTS="+cts.getNum());
+						//debugOutput.output(" --get ENDR from "+receivedSignal.IDFrom+", RTS="+rts.getNum()+" CTS="+cts.getNum());
+						debugOutput.output(" --get ENDR from "+receivedSignal.IDFrom);
 					}
 
 					if (cts.getNum()<0) throw new Exception("CTS Less than zero");
@@ -309,12 +326,12 @@ public class DeviceControlRTS extends Device {
 	}
 	@Override
 	protected void transmitProcess() {
-		if (dataRequest==null) dataRequest = requests.getFirst().getClone();
 
 		switch (stateTransmit){
 		
 		case 0://Initial
 
+			if (dataRequest==null) dataRequest = requests.getFirst().getClone();
 			debugOutput.output("Transmitting Starts");
 			stateTransmit=1;
 			sizeCW=Param.sizeCWmin;
@@ -333,7 +350,7 @@ public class DeviceControlRTS extends Device {
 			}
 			break;
 		case 2://wait CTS
-			debugOutput.output(" --wait CTS, RTS="+countRTS+" CTS="+countCTS);
+			//debugOutput.output(" --wait CTS, RTS="+countRTS+" CTS="+countCTS);
 			//timeoutCTS--;
 			//if (timeoutCTS<=0){
 				//debugOutput.output(" CTS timeout");
@@ -361,6 +378,7 @@ public class DeviceControlRTS extends Device {
 			debugOutput.output(" --Backoff "+countBackoff);
 			if (countBackoff<=0){
 				stateTransmit=5;
+
 				countTransmit=requests.getFirst().getLength();
 				synchronized(key){
 					dataChannel.addSignal(neighbor, id, requests.getFirst());
@@ -395,27 +413,24 @@ public class DeviceControlRTS extends Device {
 		case 7://EIFS
 			debugOutput.output(" --Waiting ACK/NACK "+countIFS);
 			if (countIFS<=0){
-				ret.retransmit();
-				stateTransmit=4;
-				countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
-				debugOutput.output(" -- retransmit");
+				//ret.retransmit();
+				//stateTransmit=4;
+				//countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
+				//debugOutput.output(" -- retransmit");
+				Request endsRequest=new Request(dataRequest.IDTo, dataChannel.getTime(), dataRequest.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
+				replyRequests.addRequest(endsRequest);
+				stateTransmit=0;
+				
+				synchronized(key){
+					requests.pop();
+				}
+				dataRequest=null;
 			}
 			if (!carrierSense){
 				countIFS--;
 			}else{
 				stateTransmit=6;
 			}
-			break;
-		case 8://ENDS
-			Request endsRequest=new Request(dataRequest.IDTo, dataChannel.getTime(), dataRequest.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
-			replyRequests.addRequest(endsRequest);
-			stateTransmit=0;
-			
-			int beginTime=(int)(this.requests.getTranmitTime());
-			synchronized(key){
-				requests.popSubpacket();
-			}
-			ret.transmittingEnds(beginTime,dataChannel.getTime());
 			break;
 		}
 
@@ -449,10 +464,10 @@ public class DeviceControlRTS extends Device {
 				//}
 			break;
 		case 2://wait other sending
-			//if (rts.getNum()!=oldCountRTS){
-				oldCountRTS=rts.getNum();
+			if (countRTS!=oldCountRTS){
+				oldCountRTS=countRTS;
 				debugOutput.output(" --wait other sending, RTS="+countRTS+" ENDS="+countENDS+" threshold="+threshold);
-			//}
+			}
 			//if (rts.getNum()<=0){
 			if (countENDS>=threshold){
 				stateReply=3;

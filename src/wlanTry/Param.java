@@ -6,11 +6,11 @@ public class Param {
 	public static final boolean withUplink = true;
 	public static final int simTimeLength=100000;
 	public static final int numAP=4;
-	public static final int maximumMT=4;
+	public static final int maximumMT=20;
 	public static final int simRepeat=1;
 	//public static final boolean isControlChannel = true;
 	public static final DeviceType deviceType = DeviceType.ControlChannelRTS;
-	public static final boolean isDebug = true;
+	public static final boolean isDebug = false;
 	public static final boolean allMT = true;
 	
 	public static final double throughputRequest=3 + ((withDownlink&withUplink)?0:3);  //Mbps
@@ -35,7 +35,7 @@ public class Param {
 
 	public static final int numRequest = (int)(packetRequestRates*simTimeLength/100000);
 	//Parameter form Control channel
-	public static final int timeControlSlot=10;
+	public static final int timeControlSlot=5;
 	public static final int timeCRC=5;
 	public static final int timeoutCTS=200;
 }

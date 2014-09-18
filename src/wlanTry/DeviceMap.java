@@ -64,7 +64,7 @@ abstract class DeviceMap {
 					if (this.getAPofIndex(i)==ap){
 						double time=0;
 						ExpRandom r=new ExpRandom(pps);
-						while (time<Param.simTimeLength){
+						while (time<Param.simTimeLength*2){
 							time=r.nextSum();
 							if (Param.deviceType==DeviceType.CSMA){
 								rqs.addRequest(new Request(i, time, IDPacket++, PacketType.DATA, 1, Param.timeData));
@@ -87,7 +87,7 @@ abstract class DeviceMap {
 				RequestsQueue rqs=new RequestsQueue();
 				double time=0;
 				ExpRandom r=new ExpRandom(pps);
-				while (time<Param.simTimeLength){
+				while (time<Param.simTimeLength*2){
 					time=r.nextSum();
 					if (Param.deviceType==DeviceType.CSMA){
 						rqs.addRequest(new Request(this.getAPofIndex(i),time,IDPacket++,PacketType.DATA, 1,Param.timeData));

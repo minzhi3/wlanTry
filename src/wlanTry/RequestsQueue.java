@@ -21,6 +21,9 @@ public class RequestsQueue {
 		}
 		return false;
 	}
+	public void pop(){
+		requests.removeFirst();
+	}
 	public void addRequest(Request r){
 		this.requests.add(r);
 	}
