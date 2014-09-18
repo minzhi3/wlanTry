@@ -17,9 +17,9 @@ import wlanTry.*;
 public class DeviceTest {
 	ArrayList<Location> map;
 	DeviceMapAP1 dm;
-	RequestsQueue req1,req2,req0;
+	RequestsQueue req1,req2,req3;
 	private void neighborInit(){
-		dm=new DeviceMapAP1(2);
+		dm=new DeviceMapAP1(3);
 		map=new ArrayList<Location>();
 		map.add(new Location(0,0));
 		map.add(new Location(-30,0));
@@ -28,21 +28,21 @@ public class DeviceTest {
 		dm.createMap(map);
 	}
 	private void requestsInit(){
-		req0=new RequestsQueue();
 		req1=new RequestsQueue();
 		req2=new RequestsQueue();
+		req3=new RequestsQueue();
 		for (int i=0;i<1;i++){
-			req0.addRequest(new Request(0, 500*i+100000, 2, PacketType.DATA, 10, 30));
-			req1.addRequest(new Request(0, 500*i+10, 1, PacketType.DATA, 10, 100));
-			req2.addRequest(new Request(0, 500*i+210000, 3, PacketType.DATA, 10, 30));
+			req1.addRequest(new Request(0, 500, 1, PacketType.DATA, 10, 100));
+			req2.addRequest(new Request(0, 600, 2, PacketType.DATA, 10, 100));
+			req3.addRequest(new Request(0, 700, 3, PacketType.DATA, 10, 100));
 			//req1.addRequest(new Request(2, 310, 4, PacketType.DATA, 5, 30));
 		}
 		ArrayList<RequestsQueue> reqs=new ArrayList<RequestsQueue>();
 
 		reqs.add(new RequestsQueue());
-		reqs.add(req0);
 		reqs.add(req1);
 		reqs.add(req2);
+		reqs.add(req3);
 		dm.setRequest(reqs);
 	}
 	@Test
@@ -60,7 +60,7 @@ public class DeviceTest {
 				controlChannel.tic();
 				int time=dataChannel.getTime();
 				debugChannel.outputInit(time);
-				if (time%5!=0) return;
+				if (time%1!=0) return;
 				String channelString=dataChannel.ToString();
 				String controlString=controlChannel.ToString();
 				if (channelString!=null)

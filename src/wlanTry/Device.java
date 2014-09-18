@@ -95,8 +95,10 @@ public abstract class Device implements Callable<DeviceResult> {
 	private boolean checkTransmit() {
 		if (stateTransmit>0)
 			return true;
-		else
+		else{
+			//debugOutput.output("  ---REQ "+requests.getTranmitTime());
 			return requests.getTranmitTime()<dataChannel.currentTime;
+		}
 	}
 	
 	protected abstract void receiveProcess() throws Exception;

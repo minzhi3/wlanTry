@@ -10,24 +10,47 @@ import java.util.concurrent.Future;
 
 import org.junit.Test;
 
-import wlanTry.Channel;
-import wlanTry.DebugOutput;
-import wlanTry.DeviceControlNACK;
-import wlanTry.DeviceMapAP1;
-import wlanTry.DeviceMapAP4;
-import wlanTry.DeviceResult;
-import wlanTry.Location;
-import wlanTry.PacketType;
-import wlanTry.Param;
-import wlanTry.Request;
-import wlanTry.RequestsQueue;
+import wlanTry.*;
 
 
 public class DeviceTestAP4 {
 
 	ArrayList<Location> map;
 	DeviceMapAP4 dm;
+	private void neighborInit(){
+		dm=new DeviceMapAP4(1);
+		map=new ArrayList<Location>();
+		map.add(new Location(25,25));
+		map.add(new Location(-25,25));
+		map.add(new Location(-25,-25));
+		map.add(new Location(25,-25));
 
+		map.add(new Location(5,5));
+		map.add(new Location(-5,5));
+		map.add(new Location(-5,-5));
+		map.add(new Location(5,-5));
+		dm.createMap(map);
+	}
+	private void requestsInit(){
+		RequestsQueue req1=new RequestsQueue();
+		RequestsQueue req2=new RequestsQueue();
+		RequestsQueue req3=new RequestsQueue();
+		for (int i=0;i<100;i++){
+			req1.addRequest(new Request(dm.getAPofIndex(5), 800*i+500, 5,PacketType.DATA, 10, 100));
+			req2.addRequest(new Request(dm.getAPofIndex(6), 800*i+500, 6, PacketType.DATA, 10, 100));
+			req3.addRequest(new Request(dm.getAPofIndex(7), 800*i+500, 7, PacketType.DATA, 10, 100));
+			//req1.addRequest(new Request(2, 310, 4, PacketType.DATA, 5, 30));
+		}
+		ArrayList<RequestsQueue> reqs=new ArrayList<RequestsQueue>();
+		
+		for (int i=0;i<5;i++){
+			reqs.add(new RequestsQueue());
+		}
+		reqs.add(req1);
+		reqs.add(req2);
+		reqs.add(req3);
+		dm.setRequest(reqs);
+	}
 	@Test
 	public void test() {
 		final Channel dataChannel=new Channel(8);
@@ -41,23 +64,53 @@ public class DeviceTestAP4 {
 			public void run() {
 				dataChannel.tic();
 				controlChannel.tic();
-				debugChannel.output(dataChannel.getTime()+":\t"+dataChannel.ToString());
-				debugChannel.output("CH:\t"+controlChannel.ToString());
-				debugChannel.output("\n");
-				System.out.println(dataChannel.getTime());
+				int time=dataChannel.getTime();
+				debugChannel.outputInit(time);
+				if (time%1!=0) return;
+				String channelString=dataChannel.ToString();
+				String controlString=controlChannel.ToString();
+				if (channelString!=null)
+					debugChannel.output(channelString);
+				if (controlString!=null)
+					debugChannel.output(controlString);
+				debugChannel.outputToFile();
 			}
 		});
 		//this.neighborInit();
 		//this.requestsInit();
 		dm=new DeviceMapAP4(1);
 		dm.createMap();
-		dm.createRequest(1/Param.packetRequestRates);
-		DeviceControlNACK d[]=new DeviceControlNACK[8];
+		//dm.createRequest(1/Param.packetRequestRates);
+		this.neighborInit();
+		this.requestsInit();
+		Device d[]=new Device[8];
 		for (int i=0;i<4;i++){
-			d[i]=new DeviceControlNACK(i, -1, cb, key, dataChannel, controlChannel, dm);
+			switch (Param.deviceType){
+			case ControlChannelNACK:
+				d[i]=new DeviceControlNACK(i, -1, cb, key, dataChannel, controlChannel, dm);
+				break;
+			case ControlChannelRTS:
+				d[i]=new DeviceControlRTS(i, -1, cb, key, dataChannel, controlChannel, dm);
+				break;
+			case CSMA:
+				break;
+			default:
+				break;
+			}
 		}
 		for (int i=0;i<4;i++){
-			d[i+4]=new DeviceControlNACK(i+4, dm.getAPofIndex(i+4), cb, key, dataChannel, controlChannel, dm);
+			switch (Param.deviceType){
+			case ControlChannelNACK:
+				d[i+4]=new DeviceControlNACK(i+4, dm.getAPofIndex(i+4), cb, key, dataChannel, controlChannel, dm);
+				break;
+			case ControlChannelRTS:
+				d[i+4]=new DeviceControlRTS(i+4, dm.getAPofIndex(i+4), cb, key, dataChannel, controlChannel, dm);
+				break;
+			case CSMA:
+				break;
+			default:
+				break;
+			}
 		}
 
 		ExecutorService es = Executors.newCachedThreadPool();
@@ -78,6 +131,7 @@ public class DeviceTestAP4 {
 		for (int i=0;i<4;i++){
 			System.out.println("MT"+i+": "+results2.get(i).getThroughputRx()+" "+results2.get(i).getThroughputTx()+" "+results2.get(i).getDelayTime());
 		}
+		debugChannel.close();
 	}
 
 }

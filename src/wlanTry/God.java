@@ -53,7 +53,7 @@ public class God implements Callable<GodResult>{
 				controlChannel.tic();
 				int time=dataChannel.getTime();
 				debugChannel.outputInit(time);
-				if (time%5!=0) return;
+				if (time%1!=0) return;
 				String channelString=dataChannel.ToString();
 				String controlString=controlChannel.ToString();
 				if (channelString!=null)
@@ -74,6 +74,9 @@ public class God implements Callable<GodResult>{
 				break;
 			case ControlChannelNACK:
 				devices[i]=new DeviceControlNACK(i,dm.getAPofIndex(i), cb,key, dataChannel, controlChannel, dm);
+				break;
+			case ControlChannelRTS:
+				devices[i]=new DeviceControlRTS(i,dm.getAPofIndex(i), cb,key, dataChannel, controlChannel, dm);
 				break;
 			default:
 				break;
@@ -104,6 +107,7 @@ public class God implements Callable<GodResult>{
 		}
 		es.shutdown();
 		//DebugOutput.outputAlways("GOD "+APNum);
+		debugChannel.close();
 		return gr;
 	}
 
