@@ -2,11 +2,26 @@ package wlanTry;
 
 import java.text.spi.BreakIteratorProvider;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
 
 import signal.Signal;
+class SignalComparator implements Comparator<Signal> {
 
+	@Override
+	public int compare(Signal arg0, Signal arg1) {
+		int t1=arg0.getEndTime();
+		int t2=arg1.getEndTime();
+		if (t1<t2)
+			return -1;
+		else if (t1>t2)
+			return 1;
+		else
+			return 0;
+	}
+	
+}
 public class DeviceControlRTS extends Device {
 	final int numMT;
 	final int IDSlot;
@@ -48,6 +63,8 @@ public class DeviceControlRTS extends Device {
 		receiveSignalQueue.addAll(controlSignals);
 		ArrayList<Signal> delete=new ArrayList<Signal>();
 		boolean multiline=false;
+		receiveSignalQueue.sort(new SignalComparator());
+		
 		for (Signal receivedSignal : receiveSignalQueue) {
 			if (multiline)debugOutput.output("\n     ");
 			multiline=true;
@@ -112,11 +129,13 @@ public class DeviceControlRTS extends Device {
 							);
 					}
 					if (receivedSignal.IDTo==id){
-						sending=false;
+						//sending=false;
 						ret.receiveNACK();
-						stateTransmit=0;
-						Request endsRequest=new Request(receivedSignal.IDFrom, dataChannel.getTime(), receivedSignal.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
-						replyRequests.addRequest(endsRequest);
+						stateTransmit=4;
+						countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
+						debugOutput.output(" -- retransmit");
+						//Request endsRequest=new Request(receivedSignal.IDFrom, dataChannel.getTime(), receivedSignal.IDPacket, PacketType.ENDS, 1, Param.timeControlSlot-2);
+						//replyRequests.addRequest(endsRequest);
 						
 					}
 					//}
@@ -129,8 +148,10 @@ public class DeviceControlRTS extends Device {
 					}
 
 					if (receivedSignal.IDTo==id){
+						
 						if (!receiving){//If itself is not receiving
 							delete.add(receivedSignal);
+							threshold=countRTS;
 							receiving=true;
 							replyRequests.addRequest(new Request(
 									receivedSignal.IDFrom, 
@@ -312,7 +333,7 @@ public class DeviceControlRTS extends Device {
 			}
 			break;
 		case 2://wait CTS
-			debugOutput.output(" --wait CTS, RTS="+rts.getNum()+" CTS="+cts.getNum());
+			debugOutput.output(" --wait CTS, RTS="+countRTS+" CTS="+countCTS);
 			//timeoutCTS--;
 			//if (timeoutCTS<=0){
 				//debugOutput.output(" CTS timeout");
@@ -375,7 +396,9 @@ public class DeviceControlRTS extends Device {
 			debugOutput.output(" --Waiting ACK/NACK "+countIFS);
 			if (countIFS<=0){
 				ret.retransmit();
-				stateTransmit=0;
+				stateTransmit=4;
+				countBackoff=(new Random().nextInt(sizeCW)+1)*Param.timeSlot;
+				debugOutput.output(" -- retransmit");
 			}
 			if (!carrierSense){
 				countIFS--;
@@ -428,7 +451,7 @@ public class DeviceControlRTS extends Device {
 		case 2://wait other sending
 			//if (rts.getNum()!=oldCountRTS){
 				oldCountRTS=rts.getNum();
-				debugOutput.output(" --wait sending, RTS="+rts.getNum());
+				debugOutput.output(" --wait other sending, RTS="+countRTS+" ENDS="+countENDS+" threshold="+threshold);
 			//}
 			//if (rts.getNum()<=0){
 			if (countENDS>=threshold){
@@ -452,9 +475,7 @@ public class DeviceControlRTS extends Device {
 				if (replyRequests.getFirst().type==PacketType.ENDR ||replyRequests.getFirst().type==PacketType.NACK){
 					receiving=false;
 				}
-				if (replyRequests.getFirst().type==PacketType.RTS){
-					threshold=countRTS;
-				}
+				
 				ret.reply(replyRequests.getFirst().type);
 				replyRequests.popSubpacket();
 				stateReply=4;
