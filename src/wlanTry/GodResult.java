@@ -67,4 +67,10 @@ public class GodResult {
 			return (double)throughputRx;
 		}
 	}
+	public double getTxPerDevice(){
+		return getThroughputTx()*numGod/this.numDevice;
+	}
+	public double getRxPerDevice(){
+		return getThroughputRx()*numGod/this.numDevice;
+	}
 }
