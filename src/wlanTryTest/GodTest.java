@@ -18,7 +18,8 @@ public class GodTest {
 		Future<GodResult> result;
 		ExecutorService es = Executors.newCachedThreadPool();
 		long begintime = System.nanoTime();
-		result=es.submit(new God(10,1));
+		//result=es.submit(new God(10,1));
+		result=es.submit(new GodQueue(10,1));
 		try {
 			gr=result.get();
 		} catch (InterruptedException | ExecutionException e) {

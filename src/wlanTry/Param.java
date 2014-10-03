@@ -21,7 +21,7 @@ public class Param {
 	public static final int sizeCWmin=16;
 	public static final int sizeCWmax=1024;
 	public static final double dataRates=72; //Mbps
-	public static final int numSubpacket=10;
+	public static final int numSubpacket=1;
 	
 	public static final int carrierSenseRange=40;
 	public static final int distAP=50;
