@@ -4,7 +4,7 @@ public class Param {
 	public static final String outputPath = "D:\\mt\\";
 	public static final boolean withDownlink = false;
 	public static final boolean withUplink = true;
-	public static final int simTimeLength=200000;
+	public static final int simTimeLength=100000;
 	public static final int numAP=4;
 	public static final int maximumMT=20;
 	public static final int simRepeat=5;

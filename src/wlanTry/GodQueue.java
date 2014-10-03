@@ -33,6 +33,10 @@ public class GodQueue extends God {
 		super(n, type);
 		gr=new GodResult();
 		dr=new DeviceResult[super.ThreadNum];
+		allReq=new LinkedList<Signal>();
+		for (int i=0;i<super.ThreadNum;i++){
+			dr[i]=new DeviceResult();
+		}
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -61,12 +65,13 @@ public class GodQueue extends God {
 			ListIterator<Signal> it=ie;
 			Signal s;
 			do{
+				if (!it.hasNext()) break;
 				s=it.next();
-				if (s==null) break;
 				if (s.timeBegin<=time){
 					ie.next();
 				}
-			}while(s.timeBegin>time);
+				System.out.println(time+"IN QUEUE "+s.toString());
+			}while(s.timeBegin<time);
 			
 			ListIterator<Signal> ii=ib;
 			while (ii!=ie){
@@ -77,6 +82,7 @@ public class GodQueue extends God {
 				//From Queue to Channel (2)
 				if (check(s)){
 					channel.add(s);
+					System.out.println(time+" :PUT IN "+s.toString());
 				}
 				checkEnd();
 			}
