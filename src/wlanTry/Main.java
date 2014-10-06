@@ -26,7 +26,10 @@ public class Main {
 		
 		long begintime = System.nanoTime();
 		for (int i=0;i<RP;i++){
-			results.add(es.submit(new God(numMT,numAP)));
+			if (Param.deviceType==DeviceType.ControlChannelRTS)
+				results.add(es.submit(new GodQueue(numMT,numAP)));
+			else
+				results.add(es.submit(new God(numMT,numAP)));
 		}
 		for (int i=0;i<RP;i++){
 			try {
@@ -63,7 +66,10 @@ public class Main {
 
 			
 			for (int i=0;i<numMT;i++){
-				results.add(es.submit(new God(i,numAP)));
+				if (Param.deviceType==DeviceType.ControlChannelRTS)
+					results.add(es.submit(new GodQueue(i,numAP)));
+				else
+					results.add(es.submit(new God(i,numAP)));
 			}
 			
 			for (int i=0;i<numMT;i++){

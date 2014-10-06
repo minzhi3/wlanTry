@@ -22,32 +22,50 @@ class SignalBeginComparator implements Comparator<Signal> {
 	}
 	
 }
+class NeighborList{
+	int neighbors[];
+	public NeighborList(ArrayList<Integer> neighbors){
+		this.neighbors=new int[neighbors.size()];
+		int i=0;
+		for (Integer p:neighbors){
+			this.neighbors[i++]=p;
+		}
+	}
+}
 public class GodQueue extends God {
-	LinkedList<Signal> allReq;
-	LinkedList<Signal> channel;
+	ArrayList<Signal> allReq;
+	LinkedList<Signal> channel,queue;
 	int time;
 	GodResult gr;
 	DeviceResult dr[];
+	ArrayList<NeighborList> neighbors;
+	
 
 	public GodQueue(int n, int type) {
 		super(n, type);
 		gr=new GodResult();
 		dr=new DeviceResult[super.ThreadNum];
-		allReq=new LinkedList<Signal>();
+		channel=new LinkedList<Signal>();
+		queue=new LinkedList<Signal>();
+		allReq=new ArrayList<Signal>();
 		for (int i=0;i<super.ThreadNum;i++){
 			dr[i]=new DeviceResult();
 		}
-		// TODO Auto-generated constructor stub
+		neighbors=new ArrayList<NeighborList>();
+		for (int i=0;i<super.ThreadNum;i++){
+			neighbors.add(new NeighborList(dm.getNeighbour(i)));
+		}
 	}
 	
 	private void buildQueue(){
 		int IDFrom=0;
 		for (RequestsQueue qs:dm.requestsList){
-			IDFrom++;
+			
 			for (Request rr:qs.requests){
 				Signal signal=rr.toSignal(IDFrom, (int)rr.time);
 				allReq.add(signal);
 			}
+			IDFrom++;
 		}
 		Collections.sort(allReq, new SignalBeginComparator());
 	}
@@ -56,39 +74,69 @@ public class GodQueue extends God {
 		if (dm==null) return null;
 		buildQueue();
 		
-		ListIterator<Signal> ib,ie;
-		ib=ie=allReq.listIterator();
+		int ib,ie;
+		ib=ie=0;
 		double timeMT[]=new double[super.ThreadNum];
 		
 		for (time=0;time<Param.simTimeLength;time++){
 			//From Requeue to Queue
-			ListIterator<Signal> it=ie;
-			Signal s;
+			int it=ie;
+			/*
 			do{
-				if (!it.hasNext()) break;
-				s=it.next();
+				if (it>=allReq.size()-1) break;
+				it++;
+				s=allReq.get(it);
 				if (s.timeBegin<=time){
-					ie.next();
+					ie=it;
+					System.out.println(time+" FIN QUEUE "+s.getString());
 				}
-				System.out.println(time+"IN QUEUE "+s.toString());
-			}while(s.timeBegin<time);
+			}while(s.timeBegin<time);*/
+			while (ie<allReq.size() && allReq.get(ie).timeBegin<time){
+				queue.add(allReq.get(ie).getClone());
+				//System.out.println(time+" FIN QUEUE "+allReq.get(ie).getString());
+				ie++;
+			}
 			
-			ListIterator<Signal> ii=ib;
+			/*
 			while (ii!=ie){
-				s=ii.next();
+				s=allReq.get(ii);
 				//From Queue to Channel (1)
+
 				if (timeMT[s.IDFrom]>=time) continue;
 				
 				//From Queue to Channel (2)
 				if (check(s)){
-					channel.add(s);
-					System.out.println(time+" :PUT IN "+s.toString());
+					Signal puts=s.getClone();
+					puts.timeBegin=time;
+					channel.add(puts);
+					System.out.println(time+" :PUT IN "+s.getString());
+				}
+				checkEnd();
+				ii++;
+			}*/
+			ArrayList<Signal> delete=new ArrayList<Signal>();
+			for (Signal s:queue){
+				if (timeMT[s.IDFrom]>=time) continue;
+				
+				if (check(s)){
+					Signal puts=s.getClone();
+					puts.timeBegin=time;
+					channel.add(puts);
+					//System.out.println(time+" :PUT IN "+puts.getString());
+					delete.add(s);
+					timeMT[s.IDFrom]=puts.getEndTime();
 				}
 				checkEnd();
 			}
+			queue.removeAll(delete);
 		}
 		for (DeviceResult drs:dr){
 			gr.add(drs);
+		}
+		if (Param.isDebug){
+			for (int i=0;i<ThreadNum;i++){
+				//System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+dr[i].getThroughputRx()+" "+dr[i].getThroughputTx()+" "+dr[i].getDelayTime());
+			}
 		}
 		return gr;
 	}
@@ -100,18 +148,19 @@ public class GodQueue extends God {
 				delete.add(ex);
 				dr[ex.IDFrom].receiveACK();
 				dr[ex.IDTo].receiveDATA();
+				//System.out.println(time+": END "+ex.getString());
 			}
 		}
 		channel.removeAll(delete);
 	}
 
 	private boolean check(Signal s) {
-		ArrayList<Integer> neighbor=dm.getNeighbour(s.IDFrom);
+		NeighborList neighbor=this.neighbors.get(s.IDFrom);
 		boolean interference[]=new boolean[super.ThreadNum];
 		for (int i=0;i<dm.getDeviceNum();i++){
 			interference[i]=false;
 		}
-		for (Integer i:neighbor){
+		for (Integer i:neighbor.neighbors){
 			interference[i]=true;
 		}
 		for (Signal ex:channel){
