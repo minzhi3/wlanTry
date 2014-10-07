@@ -3,6 +3,7 @@ package wlanTry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -23,12 +24,12 @@ class SignalBeginComparator implements Comparator<Signal> {
 	
 }
 class NeighborList{
-	int neighbors[];
-	public NeighborList(ArrayList<Integer> neighbors){
-		this.neighbors=new int[neighbors.size()];
-		int i=0;
+	boolean neighbors[];
+	public NeighborList(int deviceNum,ArrayList<Integer> neighbors){
+		this.neighbors=new boolean[deviceNum];
+
 		for (Integer p:neighbors){
-			this.neighbors[i++]=p;
+			this.neighbors[p]=true;
 		}
 	}
 }
@@ -53,7 +54,7 @@ public class GodQueue extends God {
 		}
 		neighbors=new ArrayList<NeighborList>();
 		for (int i=0;i<super.ThreadNum;i++){
-			neighbors.add(new NeighborList(dm.getNeighbour(i)));
+			neighbors.add(new NeighborList(super.ThreadNum,dm.getNeighbour(i)));
 		}
 	}
 	
@@ -74,65 +75,28 @@ public class GodQueue extends God {
 		if (dm==null) return null;
 		buildQueue();
 		
-		int ib,ie;
-		ib=ie=0;
-		double timeMT[]=new double[super.ThreadNum];
+		int ie;
+		ie=0;
 		
 		for (time=0;time<Param.simTimeLength;time++){
-			//From Requeue to Queue
-			int it=ie;
-			/*
-			do{
-				if (it>=allReq.size()-1) break;
-				it++;
-				s=allReq.get(it);
-				if (s.timeBegin<=time){
-					ie=it;
-					System.out.println(time+" ：IN QUEUE "+s.getString());
-				}
-			}while(s.timeBegin<time);*/
-			while (ie<allReq.size() && allReq.get(ie).timeBegin<time){
-				queue.add(allReq.get(ie).getClone());
-				if (Param.isDebug)
-					System.out.println(time+" ：IN QUEUE "+allReq.get(ie).getString());
-				ie++;
-			}
-			
-			/*
-			while (ii!=ie){
-				s=allReq.get(ii);
-				//From Queue to Channel (1)
-
-				if (timeMT[s.IDFrom]>=time) continue;
-				
-				//From Queue to Channel (2)
-				if (check(s)){
-					Signal puts=s.getClone();
-					puts.timeBegin=time;
-					channel.add(puts);
-					System.out.println(time+" :PUT IN "+s.getString());
-				}
-				checkEnd();
-				ii++;
-			}*/
-			ArrayList<Signal> delete=new ArrayList<Signal>();
-			for (Signal s:queue){
-				if (timeMT[s.IDFrom]>=time) continue;
-				
-				if (check(s)){
-					Signal puts=s.getClone();
-					puts.timeBegin=time;
-					channel.add(puts);
-
-					if (Param.isDebug)
-						System.out.println(time+" :PUT IN "+puts.getString());
-					delete.add(s);
-					timeMT[s.IDFrom]=puts.getEndTime();
-				}
-			}
 
 			checkEnd();
-			queue.removeAll(delete);
+			while (ie<allReq.size() && allReq.get(ie).timeBegin<=time){
+				enqueue(allReq.get(ie));
+				
+				
+				if (Param.isDebug){
+					StringBuilder sb=new StringBuilder();
+					sb.append("QUE:\n");
+					for (Signal s:queue){
+						sb.append(s.getShortString());
+						sb.append('\n');
+					}
+					System.out.print(sb.toString());
+				}
+					ie++;
+			}
+			checkQueue();
 		}
 		for (int i=Param.numAP;i<super.ThreadNum;i++){
 			if (dm.inCenter(i))
@@ -144,6 +108,96 @@ public class GodQueue extends God {
 			}
 		}
 		return gr;
+	}
+
+	private void checkQueue() {
+		boolean change=false;
+		ArrayList<Signal> delete=new ArrayList<Signal>();
+		for (Signal s:queue){
+			if (s.timeBegin<=time){
+				channel.add(s.getClone());
+				change=true;
+				if (Param.isDebug){
+					System.out.println(time+" ：PUT IN "+s.getString());
+				}
+				delete.add(s);
+			}
+		}
+		queue.removeAll(delete);
+		if (Param.isDebug && change){
+			StringBuilder sb=new StringBuilder();
+			sb.append("CHA:\n");
+			for (Signal cha:channel){
+				sb.append(cha.getShortString());
+				sb.append('\n');
+			}
+			System.out.print(sb.toString());
+		}
+	}
+
+	private void enqueue(Signal signal) {
+		ListIterator<Signal> li=queue.listIterator();
+		Signal toinsert=signal.getClone();
+
+		//For Channel wait until MT near the transmitter ends their receiving
+		//and MT near the receiver ends their transmitting
+		for (Signal cha:channel){
+			int endTime=cha.getEndTime();
+			NeighborList receMTs=neighbors.get(cha.IDTo);
+			if (receMTs.neighbors[toinsert.IDFrom] && toinsert.timeBegin<=endTime){
+				toinsert.timeBegin=cha.getEndTime();
+			}
+			
+			NeighborList tranMTs=neighbors.get(cha.IDFrom);
+			if (tranMTs.neighbors[toinsert.IDTo] && toinsert.timeBegin<=endTime){
+				toinsert.timeBegin=cha.getEndTime();
+			}
+		}
+		
+		//For Queue
+		int b,e;
+		
+		b=e=toinsert.timeBegin;
+		if (queue.isEmpty()){
+			queue.add(toinsert);
+		}else{
+			Signal q1,q2 = null;
+			while (true){
+				NeighborList receMTs,tranMTs;
+				do{
+					if (li.hasNext())
+						q1=li.next();
+					else{
+						q1=null;
+						break;
+					}
+					
+					receMTs=neighbors.get(q1.IDTo);
+					tranMTs=neighbors.get(q1.IDFrom);
+				}while(!receMTs.neighbors[toinsert.IDFrom] && !tranMTs.neighbors[toinsert.IDTo]);
+				
+				if (q1!=null) 
+					b=q1.timeBegin-1;
+				else
+					b=Param.simTimeLength*10;
+				
+				if (q2!=null && q2.getEndTime()+1>e) e=q2.getEndTime()+1;
+				
+				if (b-e>signal.timeLength){
+					if (q1!=null) li.previous();
+					
+					toinsert.timeBegin=e;
+					li.add(toinsert);
+					if (q1!=null) li.next();
+					if (Param.isDebug)
+						System.out.println(time+" ：IN QUEUE "+toinsert.getString());
+					break;
+				}
+				q2=q1;
+			}
+		}
+		
+		
 	}
 
 	private void checkEnd() {
@@ -162,19 +216,13 @@ public class GodQueue extends God {
 
 	private boolean check(Signal s) {
 		NeighborList neighbor=this.neighbors.get(s.IDFrom);
-		boolean interference[]=new boolean[super.ThreadNum];
-		for (int i=0;i<dm.getDeviceNum();i++){
-			interference[i]=false;
-		}
-		for (Integer i:neighbor.neighbors){
-			interference[i]=true;
-		}
+
 		for (Signal r:queue){
 			if (r.IDPacket==s.IDPacket) break;
-			if (interference[r.IDFrom]) return false;
+			if (neighbor.neighbors[r.IDTo]) return false;
 		}
 		for (Signal ex:channel){
-			if (interference[ex.IDTo]){
+			if (neighbor.neighbors[ex.IDTo]){
 				return false;
 			}
 		}

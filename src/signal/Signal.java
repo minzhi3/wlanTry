@@ -31,7 +31,7 @@ public class Signal implements Cloneable{
 		return null;
 	}
 	public int getEndTime(){
-		return this.timeLength+this.timeBegin;
+		return this.timeLength+this.timeBegin-1;
 	}
 	public void removeSubpacket(){
 		numSubpacket--;
@@ -56,6 +56,12 @@ public class Signal implements Cloneable{
 				this.timeBegin+" "+
 				this.timeLength+" "+
 				(this.type==PacketType.DATA?(this.error?"-ERROR":"-OK"):"");
+	}
+	public String getShortString(){
+		return this.IDFrom+"->"+
+				this.IDTo+","+
+				this.timeBegin+" "+
+				this.getEndTime();
 	}
 	@Override
 	protected Object clone() throws CloneNotSupportedException{
