@@ -93,7 +93,8 @@ public class GodQueue extends God {
 			}while(s.timeBegin<time);*/
 			while (ie<allReq.size() && allReq.get(ie).timeBegin<time){
 				queue.add(allReq.get(ie).getClone());
-				//System.out.println(time+" FIN QUEUE "+allReq.get(ie).getString());
+				if (Param.isDebug)
+					System.out.println(time+" FIN QUEUE "+allReq.get(ie).getString());
 				ie++;
 			}
 			
@@ -122,20 +123,24 @@ public class GodQueue extends God {
 					Signal puts=s.getClone();
 					puts.timeBegin=time;
 					channel.add(puts);
-					//System.out.println(time+" :PUT IN "+puts.getString());
+
+					if (Param.isDebug)
+						System.out.println(time+" :PUT IN "+puts.getString());
 					delete.add(s);
 					timeMT[s.IDFrom]=puts.getEndTime();
 				}
-				checkEnd();
 			}
+
+			checkEnd();
 			queue.removeAll(delete);
 		}
-		for (DeviceResult drs:dr){
-			gr.add(drs);
+		for (int i=Param.numAP;i<super.ThreadNum;i++){
+			if (dm.inCenter(i))
+				gr.add(dr[i]);
 		}
 		if (Param.isDebug){
 			for (int i=0;i<ThreadNum;i++){
-				//System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+dr[i].getThroughputRx()+" "+dr[i].getThroughputTx()+" "+dr[i].getDelayTime());
+				System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+dr[i].getThroughputRx()+" "+dr[i].getThroughputTx()+" "+dr[i].getDelayTime());
 			}
 		}
 		return gr;
@@ -148,7 +153,8 @@ public class GodQueue extends God {
 				delete.add(ex);
 				dr[ex.IDFrom].receiveACK();
 				dr[ex.IDTo].receiveDATA();
-				//System.out.println(time+": END "+ex.getString());
+				if (Param.isDebug)
+				System.out.println(time+": END "+ex.getString());
 			}
 		}
 		channel.removeAll(delete);
@@ -162,6 +168,10 @@ public class GodQueue extends God {
 		}
 		for (Integer i:neighbor.neighbors){
 			interference[i]=true;
+		}
+		for (Signal r:queue){
+			if (r.IDPacket==s.IDPacket) break;
+			if (interference[r.IDFrom]) return false;
 		}
 		for (Signal ex:channel){
 			if (interference[ex.IDTo]){

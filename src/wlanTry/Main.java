@@ -90,8 +90,8 @@ public class Main {
 			DebugOutput.outputAlways("RP="+repeat+" Time:"+costTime);
 		}
 		for (int i=0;i<numMT;i++){
-			DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
-			//DebugOutput.outputAlways(sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
+			//DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
+			DebugOutput.outputAlways(sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
 			
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
