@@ -27,9 +27,9 @@ public class Main {
 		long begintime = System.nanoTime();
 		for (int i=0;i<RP;i++){
 			if (Param.deviceType==DeviceType.ControlChannelRTS)
-				results.add(es.submit(new GodQueue(numMT,numAP)));
+				results.add(es.submit(new GodQueue(Param.fixedMT,numAP,Param.fixedError)));
 			else
-				results.add(es.submit(new God(numMT,numAP)));
+				results.add(es.submit(new God(Param.fixedMT,numAP,Param.fixedError)));
 		}
 		for (int i=0;i<RP;i++){
 			try {
@@ -64,12 +64,20 @@ public class Main {
 			DebugOutput.outputAlways("#"+repeat+"#");
 			long begintime = System.nanoTime();
 
-			
-			for (int i=0;i<numMT;i++){
-				if (Param.deviceType==DeviceType.ControlChannelRTS)
-					results.add(es.submit(new GodQueue(i,numAP)));
-				else
-					results.add(es.submit(new God(i,numAP)));
+			if (Param.vsBER){
+				for (double p=Param.minError;p<1;p*=Math.sqrt(10)){
+					if (Param.deviceType==DeviceType.ControlChannelRTS)
+						results.add(es.submit(new GodQueue(Param.fixedMT,numAP,p)));
+					else
+						results.add(es.submit(new God(Param.fixedMT,numAP,p)));
+				}
+			}else{
+				for (int i=0;i<numMT;i++){
+					if (Param.deviceType==DeviceType.ControlChannelRTS)
+						results.add(es.submit(new GodQueue(i,numAP,Param.fixedError)));
+					else
+						results.add(es.submit(new God(i,numAP,Param.fixedError)));
+				}
 			}
 			
 			for (int i=0;i<numMT;i++){

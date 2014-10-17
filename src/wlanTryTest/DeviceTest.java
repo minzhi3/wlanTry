@@ -19,7 +19,7 @@ public class DeviceTest {
 	DeviceMapAP1 dm;
 	RequestsQueue req1,req2,req3;
 	private void neighborInit(){
-		dm=new DeviceMapAP1(3);
+		dm=new DeviceMapAP1(3,0.0001);
 		map=new ArrayList<Location>();
 		map.add(new Location(0,0));
 		map.add(new Location(-30,0));

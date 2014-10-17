@@ -7,6 +7,7 @@ abstract class DeviceMap {
 	final double areaAP=Param.areaAP;
 	final int numMT;
 	final int numDevice;
+	final double error;
 	public final int carrierSenseRange=Param.carrierSenseRange;
 	protected ArrayList<Location> devices;
 	protected ArrayList<RequestsQueue> requestsList;
@@ -15,10 +16,11 @@ abstract class DeviceMap {
 	/**
 	 * The distance of carrier sense.
 	 */
-	public DeviceMap (int n){
+	public DeviceMap (int n, double error){
 		devices=new ArrayList<Location>();
 		requestsList=new ArrayList<RequestsQueue>();
 		this.numMT=n;
+		this.error=error;
 		this.numDevice=(numMT+1)*Param.numAP;
 		//accessPoints=new ArrayList<Location>();
 	}

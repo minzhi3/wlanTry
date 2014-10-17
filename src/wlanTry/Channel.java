@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Random;
 import java.util.Vector;
 
 import signal.Signal;
@@ -102,6 +103,16 @@ public class Channel {
 	}
 	public void tic(){
 		currentTime++;
+	}
+	public void generateError(int num, double p){
+		Random r=new Random();
+		double d=r.nextDouble();
+		if (d<p){
+			LinkedList<Signal> l=chArray.get(num);
+			for (Signal s:l){
+				s.errorHappen();
+			}
+		}
 	}
 	
 	/**

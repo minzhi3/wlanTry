@@ -18,7 +18,7 @@ public class DeviceTestAP4 {
 	ArrayList<Location> map;
 	DeviceMapAP4 dm;
 	private void neighborInit(){
-		dm=new DeviceMapAP4(1);
+		dm=new DeviceMapAP4(1,0.0001);
 		map=new ArrayList<Location>();
 		map.add(new Location(25,25));
 		map.add(new Location(-25,25));
@@ -78,7 +78,7 @@ public class DeviceTestAP4 {
 		});
 		//this.neighborInit();
 		//this.requestsInit();
-		dm=new DeviceMapAP4(1);
+		dm=new DeviceMapAP4(1,0.0001);
 		dm.createMap();
 		//dm.createRequest(1/Param.packetRequestRates);
 		this.neighborInit();

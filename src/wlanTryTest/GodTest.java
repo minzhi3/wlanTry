@@ -19,7 +19,7 @@ public class GodTest {
 		ExecutorService es = Executors.newCachedThreadPool();
 		long begintime = System.nanoTime();
 		//result=es.submit(new God(10,1));
-		result=es.submit(new GodQueue(Param.maximumMT,Param.numAP));
+		result=es.submit(new GodQueue(Param.maximumMT,Param.numAP,Param.fixedError));
 		try {
 			GodResult gr2=result.get();
 			gr.add(gr2);

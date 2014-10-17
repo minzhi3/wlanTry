@@ -64,6 +64,7 @@ public abstract class Device implements Callable<DeviceResult> {
 					if (controlChannel!=null) 
 						controlSignals=this.controlChannel.checkSignalOver(id);
 					carrierSense=(dataChannel.getSignal(id)!=null);
+					
 				}
 				
 				this.receiveProcess();

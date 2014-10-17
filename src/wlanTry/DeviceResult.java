@@ -60,13 +60,20 @@ public class DeviceResult {
 	public void receiveACK(){
 		packetTx++;
 	}
+	public void receiveACK(int num){
+		packetTx+=num;
+	}
 	public void receiveNACK(){
 		packetTxFails++;
 	}
 	public void receiveDATA(){
 		packetRx++;
 	}
-
+	
+	public void receiveDATA(int num){
+		packetRx+=num;
+	}
+	
 	public void retransmit(){
 	}
 	public void reply(PacketType type){

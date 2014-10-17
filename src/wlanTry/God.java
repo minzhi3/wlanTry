@@ -13,18 +13,20 @@ import java.util.concurrent.Future;
 public class God implements Callable<GodResult>{
 	int numMT;
 	int ThreadNum;
+	final double error;
 	Channel dataChannel;
 	Channel controlChannel;
 	DeviceMap dm;
 
-	public God(int n,int type){
+	public God(int n,int type, double error){
 		this.numMT=n;
+		this.error=error;
 		switch (type){
 		case 1:
-			dm=new DeviceMapAP1(numMT);
+			dm=new DeviceMapAP1(numMT,error);
 			break;
 		case 4:
-			dm=new DeviceMapAP4(numMT);
+			dm=new DeviceMapAP4(numMT,error);
 			break;
 		default:
 			dm=null;

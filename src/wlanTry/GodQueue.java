@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.Random;
 
 import signal.Signal;
 class SignalBeginComparator implements Comparator<Signal> {
@@ -41,8 +42,8 @@ public class GodQueue extends God {
 	ArrayList<NeighborList> neighbors;
 	
 
-	public GodQueue(int n, int type) {
-		super(n, type);
+	public GodQueue(int n, int type,double error) {
+		super(n, type, error);
 		gr=new GodResult();
 		dr=new DeviceResult[super.ThreadNum];
 		channel=new LinkedList<Signal>();
@@ -63,6 +64,7 @@ public class GodQueue extends God {
 			
 			for (Request rr:qs.requests){
 				Signal signal=rr.toSignal(IDFrom, (int)rr.time);
+				signal.timeLength*=signal.numSubpacket;
 				allReq.add(signal);
 			}
 			IDFrom++;
@@ -150,14 +152,31 @@ public class GodQueue extends God {
 		ArrayList<Signal> delete=new ArrayList<Signal>();
 		for (Signal ex:channel){
 			if (ex.getEndTime()<=time){
+				int avaiable=checkError(Param.numSubpacket,this.error);
 				delete.add(ex);
-				dr[ex.IDFrom].receiveACK();
-				dr[ex.IDTo].receiveDATA();
+				dr[ex.IDFrom].receiveACK(avaiable);
+				dr[ex.IDTo].receiveDATA(avaiable);
 				if (Param.isDebug)
 				System.out.println(time+": END "+ex.getString());
 			}
 		}
 		channel.removeAll(delete);
+	}
+
+	private int checkError(int subPacket, double error) {
+		Random r=new Random();
+		int ret=subPacket;
+		for (int i=0;i<subPacket;i++){
+			boolean flag=true;
+			for (int t=0;t<Param.timeSubpacket;t++){
+				if (r.nextDouble()<error){
+					flag=false;
+					break;
+				}
+			if (!flag) ret--;
+			}
+		}
+		return ret;
 	}
 
 	private boolean check(Signal s) {

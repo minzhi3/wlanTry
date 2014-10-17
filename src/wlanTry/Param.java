@@ -7,11 +7,17 @@ public class Param {
 	public static final int simTimeLength=500000;
 	public static final int numAP=4;
 	public static final int maximumMT=20;
+	public static final double minError=0.0000001;
 	public static final int simRepeat=5;
+	public static final int fixedMT=5;
+	public static final double fixedError=0.00001;
+	
 	//public static final boolean isControlChannel = true;
-	public static final DeviceType deviceType = DeviceType.ControlChannelRTS;
+	public static final DeviceType deviceType = DeviceType.CSMA;
 	public static final boolean isDebug = false;
 	public static final boolean allMT = false;
+	public static final boolean vsBER = false;
+	
 	
 	public static final double throughputRequest=3 + ((withDownlink&withUplink)?0:3);  //Mbps
 	public static final int timeSIFS=10;
@@ -21,7 +27,7 @@ public class Param {
 	public static final int sizeCWmin=16;
 	public static final int sizeCWmax=1024;
 	public static final double dataRates=72; //Mbps
-	public static final int numSubpacket=1;
+	public static final int numSubpacket=10;
 	
 	public static final int carrierSenseRange=40;
 	public static final int distAP=50;

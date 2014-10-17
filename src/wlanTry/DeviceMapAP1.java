@@ -4,8 +4,8 @@ import java.util.Random;
 
 public class DeviceMapAP1 extends DeviceMap {
 
-	public DeviceMapAP1(int n) {
-		super(n);
+	public DeviceMapAP1(int n,double error) {
+		super(n,error);
 	}
 	@Override
 	public void createMap(){
