@@ -57,21 +57,25 @@ public class Main {
 		GodResult sum[]=new GodResult[numMT];
 		//God g=new God(1,1);
 		//g.call();
-		
+		int cnt=0;
 		for (int repeat=0;repeat<RP;repeat++){
 			ArrayList<Future<GodResult>> results = new ArrayList<Future<GodResult>>();
 			ExecutorService es = Executors.newCachedThreadPool();
 			DebugOutput.outputAlways("#"+repeat+"#");
 			long begintime = System.nanoTime();
+			
 
 			if (Param.vsBER){
+				cnt=0;
 				for (double p=Param.minError;p<1;p*=Math.sqrt(10)){
+					cnt++;
 					if (Param.deviceType==DeviceType.ControlChannelRTS)
 						results.add(es.submit(new GodQueue(Param.fixedMT,numAP,p)));
 					else
 						results.add(es.submit(new God(Param.fixedMT,numAP,p)));
 				}
 			}else{
+				cnt=numMT;
 				for (int i=0;i<numMT;i++){
 					if (Param.deviceType==DeviceType.ControlChannelRTS)
 						results.add(es.submit(new GodQueue(i,numAP,Param.fixedError)));
@@ -79,8 +83,7 @@ public class Main {
 						results.add(es.submit(new God(i,numAP,Param.fixedError)));
 				}
 			}
-			
-			for (int i=0;i<numMT;i++){
+			for (int i=0;i<cnt;i++){
 				if (sum[i]==null){
 					sum[i]=new GodResult();
 				}
@@ -97,7 +100,7 @@ public class Main {
 			double costTime = (endtime - begintime)/1e9;
 			DebugOutput.outputAlways("RP="+repeat+" Time:"+costTime);
 		}
-		for (int i=0;i<numMT;i++){
+		for (int i=0;i<cnt;i++){
 			//DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
 			DebugOutput.outputAlways(sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
 			

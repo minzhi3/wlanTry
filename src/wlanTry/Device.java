@@ -60,6 +60,7 @@ public abstract class Device implements Callable<DeviceResult> {
 			while (this.dataChannel.getTime()<timeLength){
 				debugOutput.outputInit(dataChannel.getTime());
 				synchronized(key){
+					dataChannel.generateError(this.id, dMap.error);
 					dataSignals=this.dataChannel.checkSignalOver(this.id);
 					if (controlChannel!=null) 
 						controlSignals=this.controlChannel.checkSignalOver(id);

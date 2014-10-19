@@ -2,21 +2,21 @@ package wlanTry;
 
 public class Param {
 	public static final String outputPath = "D:\\mt\\";
-	public static final boolean withDownlink = true;
+	public static final boolean withDownlink = false;
 	public static final boolean withUplink = true;
-	public static final int simTimeLength=500000;
-	public static final int numAP=4;
+	public static final int simTimeLength=100000;
+	public static final int numAP=1;
 	public static final int maximumMT=20;
 	public static final double minError=0.0000001;
-	public static final int simRepeat=5;
+	public static final int simRepeat=1;
 	public static final int fixedMT=5;
-	public static final double fixedError=0.00001;
+	public static final double fixedError=1;
 	
 	//public static final boolean isControlChannel = true;
 	public static final DeviceType deviceType = DeviceType.CSMA;
 	public static final boolean isDebug = false;
-	public static final boolean allMT = false;
-	public static final boolean vsBER = false;
+	public static final boolean allMT = true;
+	public static final boolean vsBER = true;
 	
 	
 	public static final double throughputRequest=3 + ((withDownlink&withUplink)?0:3);  //Mbps
