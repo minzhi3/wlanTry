@@ -173,8 +173,8 @@ public class GodQueue extends God {
 					flag=false;
 					break;
 				}
-			if (!flag) ret--;
 			}
+			if (!flag) ret--;
 		}
 		return ret;
 	}

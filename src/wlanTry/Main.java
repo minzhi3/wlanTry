@@ -67,7 +67,7 @@ public class Main {
 
 			if (Param.vsBER){
 				cnt=0;
-				for (double p=Param.minError;p<1;p*=Math.sqrt(10)){
+				for (double p=Param.minError;p<0.1;p*=Math.pow(10, 0.25)){
 					cnt++;
 					if (Param.deviceType==DeviceType.ControlChannelRTS)
 						results.add(es.submit(new GodQueue(Param.fixedMT,numAP,p)));
@@ -100,10 +100,11 @@ public class Main {
 			double costTime = (endtime - begintime)/1e9;
 			DebugOutput.outputAlways("RP="+repeat+" Time:"+costTime);
 		}
+		double cntp=Param.minError;
 		for (int i=0;i<cnt;i++){
-			//DebugOutput.outputAlways(sum[i].getThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
-			DebugOutput.outputAlways(sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
-			
+			//DebugOutput.outputAlways(sum[i].ge/tThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
+			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
+			cntp*=Math.pow(10, 0.25);
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
