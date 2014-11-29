@@ -34,6 +34,9 @@ public class DeviceMapAP4 extends DeviceMap {
 			//	if (i/3==3) this.addDevice(-30, -30);
 			//}
 		}
+		//for (int i=0;i<super.devices.size();i++){
+		//	System.out.println(super.devices.get(i).x);
+		//}
 	}
 	
 	public int getAPofIndex(int index){
@@ -56,8 +59,8 @@ public class DeviceMapAP4 extends DeviceMap {
 		double apX[]=new double[]{0.5,-0.5,-0.5,0.5};
 		double apY[]=new double[]{0.5,0.5,-0.5,-0.5};
 		for (int i=0;i<4;i++){
-			double dx=x-apX[i];
-			double dy=y-apY[i];
+			double dx=x-apX[i]*this.distAP;
+			double dy=y-apY[i]*this.distAP;
 			if (Math.sqrt(dx*dx+dy*dy)<this.areaAP)
 				return true;
 		}

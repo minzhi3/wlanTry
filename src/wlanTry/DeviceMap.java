@@ -111,13 +111,23 @@ abstract class DeviceMap {
 		this.devices=pos;
 	}
 	public boolean inCenter(int id){
-		return Param.allMT||(Math.abs(devices.get(id).x)<Param.distAP/2) && (Math.abs(devices.get(id).y)<Param.distAP/2);
+		if (!Param.noiseMT)
+			return Param.allMT||(Math.abs(devices.get(id).x)<Param.distAP/2) && (Math.abs(devices.get(id).y)<Param.distAP/2);
+		else
+			return id>0 && id<=Param.noiseNum;
 	}
 	public abstract void createMap();
 	public abstract int getAPofIndex(int index);
 	protected abstract boolean inAreaAP(double x,double y);
 	public int getDeviceNum(){
 		return devices.size();
+	}
+
+	public boolean isNoiseArea(int id) {
+		if (Param.noiseMT)
+			return id<Param.noiseNum && id>0;
+		else
+			return Param.vsBER;
 	}
 
 }

@@ -104,7 +104,7 @@ public class God implements Callable<GodResult>{
 		}
 		if (Param.isDebug){
 			for (int i=0;i<ThreadNum;i++){
-				System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
+				System.out.println("MT "+i+" "+dm.devices.get(i).x+" "+dm.devices.get(i).y+" "+results.get(i).get().getThroughputRx()+" "+results.get(i).get().getThroughputTx()+" "+results.get(i).get().getDelayTime());
 			}
 		}
 		es.shutdown();
