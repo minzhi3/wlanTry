@@ -127,9 +127,18 @@ public class DeviceCSMA extends Device {
 				stateTransmit=0;
 				ret.retransmit();
 				stateTransmit=0;
-				if (this.sizeCW<Param.sizeCWmax)
+				if (this.sizeCW<Param.sizeCWmax){
 					this.sizeCW*=2;
-				debugOutput.output(" --No ACK, extends CW --"+this.sizeCW);
+					debugOutput.output(" --No ACK, extends CW --"+this.sizeCW);
+				}
+				else{
+					this.sizeCW=Param.sizeCWmin;
+					this.stateTransmit=0;
+					ret.transmittingEnds((int)(this.requests.getTranmitTime()),dataChannel.getTime());
+					this.requests.popSubpacket();
+					debugOutput.output("Discard packet");
+					return;
+				}
 			}
 			if (!carrierSense){
 				countIFS--;

@@ -104,7 +104,7 @@ public class Main {
 		for (int i=0;i<cnt;i++){
 			//DebugOutput.outputAlways(sum[i].ge/tThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
 			//DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
-			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+sum[i].getRxPerDevice()+sum[i].getTxPerDevice());
+			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+(sum[i].getRxPerDevice()+sum[i].getTxPerDevice()));
 			cntp*=Math.pow(10, 0.25);
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);

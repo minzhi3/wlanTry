@@ -110,7 +110,8 @@ public class Channel {
 		if (d<p){
 			LinkedList<Signal> l=chArray.get(num);
 			for (Signal s:l){
-				s.errorHappen();
+				if ((num<Param.noiseNum && num>0) || (s.IDFrom>0 && s.IDFrom<Param.noiseNum))
+					s.errorHappen();
 			}
 		}
 	}

@@ -14,6 +14,7 @@ public class DeviceControlNACK extends Device {
 	int countTransmit;
 	int countReply;
 	int sizeCW;
+	int retransCount;
 	
 	public DeviceControlNACK(int id, int AP, CyclicBarrier barrier, Object key,
 			Channel ch, Channel controlChannel, DeviceMap dm) {
@@ -23,6 +24,7 @@ public class DeviceControlNACK extends Device {
 		else {
 			this.IDSlot=0;
 		}
+		retransCount=0;
 	}
 	
 
@@ -168,6 +170,25 @@ public class DeviceControlNACK extends Device {
 			break;
 		case 4://EIFS
 			debugOutput.output(" --Waiting ACK/NACK "+countIFS);
+			this.retransCount++;
+			if (retransCount>=Param.maxRetrans){
+				retransCount=0;
+				if (requests.getSubpacket()<=1)
+					stateTransmit=0;
+				
+				int beginTime=(int)(this.requests.getTranmitTime());
+				boolean wholePacket;
+				synchronized(key){
+					wholePacket=requests.popSubpacket();
+				}
+				if (wholePacket) {
+					ret.transmittingEnds(beginTime,dataChannel.getTime());
+				}
+				return;
+			}else{
+				retransCount++;
+			}
+			
 			if (countIFS<=0){
 				stateTransmit=0;
 				ret.retransmit();

@@ -2,9 +2,9 @@ package wlanTry;
 
 public class Param {
 	public static final String outputPath = "D:\\mt\\";
-	public static final boolean withDownlink = true;
-	public static final boolean withUplink = false;
-	public static final int simTimeLength=100000;
+	public static final boolean withDownlink = false;
+	public static final boolean withUplink = true;
+	public static final int simTimeLength=500000;
 	public static final int numAP=1;
 	public static final int maximumMT=20+1;
 	public static final double minError=1e-5;
@@ -13,11 +13,11 @@ public class Param {
 	public static final int fixedMT=10;
 	public static final double fixedError=1;
 	
-	public static final int noiseNum = 3;
+	public static final int noiseNum = 4;
 	
 	//public static final boolean isControlChannel = true;
 	public static final DeviceType deviceType = DeviceType.CSMA;
-	public static final boolean isDebug = true;
+	public static final boolean isDebug = false;
 	public static final boolean allMT = false;
 	public static final boolean vsBER = true;
 	public static final boolean noiseMT = true;
@@ -30,10 +30,11 @@ public class Param {
 	public static final int timeData=1000;  //microsecond
 	public static final int sizeCWmin=16;
 	public static final int sizeCWmax=1024;
+	public static final int maxRetrans=6;
 	public static final double dataRates=72; //Mbps
 	public static final int numSubpacket=10;
 	
-	public static final int carrierSenseRange=40;
+	public static final int carrierSenseRange=80;
 	public static final int distAP=50;
 	public static final int areaAP=40;
 
