@@ -2,25 +2,25 @@ package wlanTry;
 
 public class Param {
 	public static final String outputPath = "D:\\mt\\";
-	public static final boolean withDownlink = false;
+	public static final boolean withDownlink = true;
 	public static final boolean withUplink = true;
 	public static final int simTimeLength=500000;
-	public static final int numAP=1;
+	public static final int numAP=4;
 	public static final int maximumMT=20+1;
 	public static final double minError=1e-5;
 	public static final double maxError=0.1;
-	public static final int simRepeat=1;
-	public static final int fixedMT=10;
-	public static final double fixedError=1;
+	public static final int simRepeat=5;
+	public static final int fixedMT=20;
+	public static final double fixedError=0;
 	
 	public static final int noiseNum = 4;
 	
 	//public static final boolean isControlChannel = true;
-	public static final DeviceType deviceType = DeviceType.CSMA;
+	public static final DeviceType deviceType = DeviceType.ControlChannelRTS;
 	public static final boolean isDebug = false;
 	public static final boolean allMT = false;
-	public static final boolean vsBER = true;
-	public static final boolean noiseMT = true;
+	public static final boolean vsBER = false;
+	public static final boolean noiseMT = false;
 	
 	
 	public static final double throughputRequest=3 + ((withDownlink&withUplink)?0:3);  //Mbps
@@ -34,7 +34,7 @@ public class Param {
 	public static final double dataRates=72; //Mbps
 	public static final int numSubpacket=10;
 	
-	public static final int carrierSenseRange=80;
+	public static final int carrierSenseRange=40;
 	public static final int distAP=50;
 	public static final int areaAP=40;
 
@@ -49,4 +49,5 @@ public class Param {
 	public static final int timeControlSlot=5;
 	public static final int timeCRC=5;
 	public static final int timeoutCTS=200;
+	public static final int DataTimeover = 20000;
 }

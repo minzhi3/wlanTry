@@ -36,7 +36,7 @@ public class Request implements Cloneable{
 		return null;
 	}
 	public Signal toSignal(int IDFrom, int begin){
-		return new Signal(IDFrom, IDTo, IDPacket, type, numSub, begin, length);
+		return new Signal(IDFrom, IDTo, IDPacket, type, numSub, (int)this.time, begin, length);
 	}
 	public int getLength(){
 		return this.numSub*this.length;

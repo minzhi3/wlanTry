@@ -48,6 +48,9 @@ public class GodResult {
 	public double getDelayTime(){
 		return (double)this.sumDelay/this.countDelay;
 	}
+	public String getDelayString(){
+		return String.format("%f,%d", this.sumDelay,countDelay);
+	}
 	public int getNum(){
 		return numDevice;
 	}

@@ -7,16 +7,18 @@ public class Signal implements Cloneable{
 	public int IDTo;
 	public PacketType type;
 	public int timeBegin;
+	public int timeRequest;
 	public int timeLength;
 	public int IDPacket;
 	public int numSubpacket;
 	boolean error;
-	public Signal(int IDFrom, int IDTo,int IDPacket,PacketType type,int subpacket, int begin,int length){
+	public Signal(int IDFrom, int IDTo,int IDPacket,PacketType type,int subpacket, int request, int begin,int length){
 		this.IDFrom=IDFrom;
 		this.IDTo=IDTo;
 		this.IDPacket=IDPacket;
 		this.type=type;
 		this.timeLength=length;
+		this.timeRequest=request;
 		this.timeBegin=begin;
 		this.numSubpacket=subpacket;
 		this.error=false;

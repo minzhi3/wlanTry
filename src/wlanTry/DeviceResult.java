@@ -55,6 +55,10 @@ public class DeviceResult {
 		return (double)this.sumDelay/(double)countDelay;
 		//return countDelay;
 	}
+	public String getDelayString(){
+		return String.format("%d,%d", this.sumDelay,countDelay);
+		//return countDelay;
+	}
 	public void accessChannel(){
 	}
 	public void receiveACK(){

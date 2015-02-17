@@ -130,6 +130,11 @@ public class GodQueue extends God {
 						System.out.println(time+" :PUT IN "+puts.getString());
 					delete.add(s);
 					timeMT[s.IDFrom]=puts.getEndTime();
+				}else if (time-s.timeRequest>Param.DataTimeover){
+					delete.add(s);
+					if (Param.isDebug)
+						System.out.println(time+" :DISCARD "+s.getString());
+					
 				}
 			}
 
@@ -142,7 +147,7 @@ public class GodQueue extends God {
 		}
 		if (Param.isDebug){
 			for (int i=0;i<ThreadNum;i++){
-				System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+dr[i].getThroughputRx()+" "+dr[i].getThroughputTx()+" "+dr[i].getDelayTime());
+				System.out.println((dm.inCenter(i)?"C ":"  ")+"MT"+i+": "+dr[i].getThroughputRx()+" "+dr[i].getThroughputTx()+" "+dr[i].getDelayString());
 			}
 		}
 		return gr;
@@ -155,6 +160,7 @@ public class GodQueue extends God {
 				int avaiable=checkError(Param.numSubpacket,this.error);
 				delete.add(ex);
 				dr[ex.IDFrom].receiveACK(avaiable);
+				dr[ex.IDFrom].transmittingEnds(ex.timeRequest, time);
 				dr[ex.IDTo].receiveDATA(avaiable);
 				if (Param.isDebug)
 				System.out.println(time+": END "+ex.getString());

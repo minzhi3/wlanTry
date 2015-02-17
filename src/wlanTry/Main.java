@@ -45,7 +45,7 @@ public class Main {
 		double costTime = (endtime - begintime)/1e9;
 		DebugOutput.outputAlways(" Time:"+costTime);
 		
-		DebugOutput.outputAlways(sum.getThroughputRx()/numAP+" "+sum.getThroughputTx()/numAP+" "+sum.getDelayTime()+" MT:"+sum.getNum());
+		DebugOutput.outputAlways(sum.getThroughputRx()/numAP+" "+sum.getThroughputTx()/numAP+" "+sum.getDelayString()+" MT:"+sum.getNum());
 		DebugOutput.outputAlways("Over");
 		
 	}
@@ -104,8 +104,8 @@ public class Main {
 		for (int i=0;i<cnt;i++){
 			//DebugOutput.outputAlways(sum[i].ge/tThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
 			//DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
-			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+(sum[i].getRxPerDevice()+sum[i].getTxPerDevice()));
-			cntp*=Math.pow(10, 0.25);
+			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+(sum[i].getRxPerDevice()+sum[i].getTxPerDevice())+" "+sum[i].getDelayTime());
+			//cntp*=Math.pow(10, 0.25);
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
