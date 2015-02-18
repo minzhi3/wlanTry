@@ -93,7 +93,15 @@ public class God implements Callable<GodResult>{
 		GodResult gr=new GodResult();
 		
 		for (int i=Param.numAP;i<ThreadNum;i++){
-			if (dm.inCenter(i)){
+			/*if (dm.inCenter(i)){
+				try {
+					gr.add(results.get(i).get());
+				} catch (ExecutionException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}*/
+			if (dm.isNoiseArea(i)){
 				try {
 					gr.add(results.get(i).get());
 				} catch (ExecutionException e) {

@@ -29,8 +29,19 @@ public class DebugOutput {
 			sb=new StringBuilder();
 		}
 	}
+	public DebugOutput(boolean other, String s){
+		try {
+			this.fos=new FileOutputStream(s);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.osw=new OutputStreamWriter(fos);
+		this.bw=new BufferedWriter(this.osw);
+		sb=new StringBuilder();
+	}
 	public void close(){
-		if (isDebug){
+		if (bw!=null){
 			try {
 				bw.close();
 			} catch (IOException e) {
@@ -62,7 +73,16 @@ public class DebugOutput {
 			sb.append(s);
 		}
 	}
-	
+	public void outputDirectly(Double d){
+		try {
+			String s=d.toString();
+			s=s+'\r'+'\n';
+			bw.write(s);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	public static void outputNeighbor(int id, ArrayList<Integer> al){
 		if (isDebug){
 			StringBuilder sb=new StringBuilder();

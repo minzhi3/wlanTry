@@ -8,12 +8,12 @@ public class Param {
 	public static final int numAP=1;
 	public static final int maximumMT=20+1;
 	public static final double minError=1e-5;
-	public static final double maxError=0.1;
-	public static final int simRepeat=1;
+	public static final double maxError=0.6;
+	public static final int simRepeat=60;
 	public static final int fixedMT=10;
-	public static final double fixedError=1;
+	public static final double fixedError=0;
 	
-	public static final int noiseNum = 4;
+	public static final int noiseNum = 3;
 	
 	//public static final boolean isControlChannel = true;
 	public static final DeviceType deviceType = DeviceType.CSMA;

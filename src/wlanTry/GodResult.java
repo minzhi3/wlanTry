@@ -1,9 +1,12 @@
 package wlanTry;
 
+import java.util.ArrayList;
+
 public class GodResult {
 	double sumDelay;
 	int countDelay;
 	private int numDevice,numGod;
+	ArrayList<Integer> arrayPacket;
 	int packetTx,packetRx,packetTxFails,packetRxFails; //For calculation of throughput
 	public GodResult(){
 		this.sumDelay=0;
@@ -13,6 +16,7 @@ public class GodResult {
 		this.packetTxFails=0;
 		this.countDelay=0;
 		this.numGod=0;
+		this.arrayPacket=new ArrayList<Integer>();
 	}
 	public void add(DeviceResult b){
 		this.numDevice++;
@@ -22,6 +26,8 @@ public class GodResult {
 		this.packetTxFails+=b.packetTxFails;
 		this.sumDelay+=b.sumDelay;
 		this.countDelay+=b.countDelay;
+		
+		this.arrayPacket.add(b.packetRx+b.packetTx);
 	}
 	public void add(GodResult b){
 		this.numDevice+=b.numDevice;
@@ -32,6 +38,8 @@ public class GodResult {
 		this.packetTxFails+=b.packetTxFails;
 		this.countDelay+=b.countDelay;
 		this.sumDelay+=b.sumDelay;
+		
+		this.arrayPacket.addAll(b.arrayPacket);
 	}
 	public double getPacketRx(){
 		return (double)this.packetRx/this.numGod;

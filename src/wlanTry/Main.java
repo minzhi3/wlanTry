@@ -104,8 +104,14 @@ public class Main {
 		for (int i=0;i<cnt;i++){
 			//DebugOutput.outputAlways(sum[i].ge/tThroughputRx()/numAP+" "+sum[i].getThroughputTx()/numAP+" "+sum[i].getDelayTime()+" ");
 			//DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+sum[i].getRxPerDevice()+" "+sum[i].getTxPerDevice()+" "+sum[i].getDelayTime()+" ");
-			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+(sum[i].getRxPerDevice()+sum[i].getTxPerDevice()));
+			DebugOutput.outputAlways((Param.vsBER?cntp:"")+" "+(sum[i].getTxPerDevice()));
 			cntp*=Math.pow(10, 0.25);
+
+			DebugOutput debugOutput = new DebugOutput(true,Param.outputPath+"CDF"+i+".txt");
+			for (Integer a : sum[i].arrayPacket){
+				debugOutput.outputDirectly(a*Param.sizeData/Param.simTimeLength/(Param.deviceType!=DeviceType.CSMA?Param.numSubpacket:1));
+			}
+			debugOutput.close();
 			//DebugOutput.outputAlways(sum[i].packetTx+" "+sum[i].packetTxFails);
 			//DebugOutput.outputAlways(sum[i].packetRx+" "+sum[i].packetRxFails);
 		}
